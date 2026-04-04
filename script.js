@@ -10,35 +10,37 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, myChart = null;
-let unsubMov, unsubAhorro, unsubHist;
 
 function selectProfile(name) {
     currentUser = name;
     document.getElementById('user-display').innerText = "Hola, " + name;
     document.getElementById('profile-selection').classList.add('hidden');
     document.getElementById('main-dashboard').classList.remove('hidden');
-    
-    // Escuchar Movimientos del Mes
-    unsubMov = db.collection("movimientos").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
+    iniciarEscuchas();
+}
+
+function iniciarEscuchas() {
+    // 1. Movimientos
+    db.collection("movimientos").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
         transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        updateUI();
+        renderUI();
     });
 
-    // Escuchar Caja de Ahorro
-    unsubAhorro = db.collection("ahorros").doc(currentUser).onSnapshot(doc => {
+    // 2. Ahorros
+    db.collection("ahorros").doc(currentUser).onSnapshot(doc => {
         totalAhorrado = doc.exists ? doc.data().total : 0;
         document.getElementById('total-saved-big').innerText = "$" + totalAhorrado.toLocaleString();
     });
 
-    // Escuchar Historial de Meses
-    unsubHist = db.collection("historial_cierres").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
+    // 3. Historial de Cierres
+    db.collection("historial_cierres").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
         const list = document.getElementById('calendar-list');
-        list.innerHTML = "";
+        list.innerHTML = snap.empty ? '<p style="text-align:center;color:gray">Sin cierres guardados.</p>' : "";
         snap.forEach(doc => {
             const d = doc.data();
             list.innerHTML += `<div class="month-card flex-between">
                 <span><strong>${d.mes} ${d.año}</strong></span>
-                <span style="color:var(--green)">+$${d.monto_final.toLocaleString()}</span>
+                <span style="color:var(--green); font-weight:bold">+$${d.monto_final.toLocaleString()}</span>
             </div>`;
         });
     });
@@ -54,7 +56,7 @@ function addEntry(type) {
     const amount = parseFloat(document.getElementById('amount').value);
     const desc = document.getElementById('desc').value;
     const cat = document.getElementById('cat').value;
-    if (!amount || !desc) return alert("Completá los datos");
+    if (!amount || !desc) return alert("¡Faltan datos!");
 
     db.collection("movimientos").add({
         amount, desc, cat, type, perfil: currentUser,
@@ -66,7 +68,7 @@ function addEntry(type) {
     });
 }
 
-function updateUI() {
+function renderUI() {
     const list = document.getElementById('history-list');
     list.innerHTML = "";
     let inc = 0, exp = 0;
@@ -75,7 +77,7 @@ function updateUI() {
         list.innerHTML += `<div class="card ${t.type} flex-between">
             <div><strong>${t.desc}</strong><br><small>${t.cat}</small></div>
             <div style="text-align:right">
-                <div style="font-weight:bold">$${t.amount.toLocaleString()}</div>
+                <div style="font-weight:bold; font-size:1.1rem">$${t.amount.toLocaleString()}</div>
                 <button class="btn-delete" onclick="borrarDato('${t.id}')">Borrar</button>
             </div>
         </div>`;
@@ -90,20 +92,21 @@ function updateChart() {
     transactions.filter(t => t.type === 'gasto').forEach(t => totals[t.cat] = (totals[t.cat] || 0) + t.amount);
     if (myChart) myChart.destroy();
     myChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6c5ce7', '#00b894', '#fd79a8', '#fab1a0'] }] }
+        type: 'pie',
+        data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6c5ce7', '#00b894', '#fd79a8', '#fab1a0', '#0984e3'] }] }
     });
 }
 
 window.transferBalanceToSavings = function() {
     if (currentSaldoNeto <= 0) return alert("No hay saldo para ahorrar.");
     const mes = new Date().toLocaleString('es-AR', { month: 'long' });
-    if (confirm(`¿Cerrar mes y archivar $${currentSaldoNeto}?`)) {
+    if (confirm(`¿Cerrar mes y archivar $${currentSaldoNeto} en la caja?`)) {
         db.collection("historial_cierres").add({ perfil: currentUser, mes, año: 2026, monto_final: currentSaldoNeto, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
         db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto });
         transactions.forEach(t => db.collection("movimientos").doc(t.id).delete());
+        alert("¡Mes cerrado con éxito!");
     }
 };
 
-window.borrarDato = id => { if(confirm("¿Borrar?")) db.collection("movimientos").doc(id).delete(); };
+window.borrarDato = id => { if(confirm("¿Eliminar este registro?")) db.collection("movimientos").doc(id).delete(); };
 function logout() { location.reload(); }
