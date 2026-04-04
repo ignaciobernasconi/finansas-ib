@@ -1,67 +1,15 @@
 :root {
-    --bg: #121212;
-    --card: #1e1e1e;
-    --purple: #6c5ce7;
-    --green: #00b894;
-    --red: #d63031;
-    --text: #ffffff;
-    --gray: #aaa;
+    --bg: #121212; --card: #1e1e1e; --purple: #6c5ce7; 
+    --green: #00b894; --red: #d63031; --text: #ffffff; --gray: #aaa;
 }
-
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
-    margin: 0;
-    padding: 20px;
-}
-
-.card {
-    background: var(--card);
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    border-left: 6px solid var(--purple);
-}
-
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+.card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 6px solid var(--purple); }
 .ingreso { border-left-color: var(--green); }
 .gasto { border-left-color: var(--red); }
-
-button {
-    width: 100%;
-    padding: 14px;
-    margin: 8px 0;
-    border-radius: 10px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-input, select {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0;
-    box-sizing: border-box;
-    border-radius: 8px;
-    background: #252525;
-    color: white;
-    border: 1px solid #333;
-}
-
+button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; background: #252525; color: white; border: 1px solid #333; }
 .hidden { display: none; }
-
-.btn-delete {
-    width: auto;
-    padding: 5px 10px;
-    background: transparent;
-    color: var(--red);
-    border: 1px solid var(--red);
-    font-size: 0.8rem;
-    margin-top: 5px;
-}
-
-.flex-between {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.btn-delete { width: auto; padding: 5px 10px; background: transparent; color: var(--red); border: 1px solid var(--red); font-size: 0.8rem; }
+.tab-content { margin-top: 20px; }
+.month-card { background: #252525; padding: 10px; margin-bottom: 5px; border-radius: 8px; font-size: 0.9rem; }
