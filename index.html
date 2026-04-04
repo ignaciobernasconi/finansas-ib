@@ -1,176 +1,37 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finansas IB</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <style>
-        :root { --bg: #121212; --card: #1e1e1e; --purple: #6c5ce7; --green: #00b894; --red: #d63031; --text: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 6px solid var(--purple); box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .ingreso { border-left-color: var(--green); }
-        .gasto { border-left-color: var(--red); }
-        button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.3s; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 8px; border: 1px solid #333; background: #252525; color: white; font-size: 1rem; }
-        .hidden { display: none; }
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        .btn-delete { width: auto; padding: 6px 12px; background: rgba(214, 48, 49, 0.1); color: var(--red); border: 1px solid var(--red); font-size: 0.8rem; margin-top: 8px; }
-    </style>
-</head>
-<body>
+<div id="profile-selection">
+    <h1>Finansas IB</h1>
+    <button onclick="selectProfile('Ignacio')" style="background: #6c5ce7; color: white;">Ignacio</button>
+    <button onclick="selectProfile('Claudia')" style="background: #fd79a8; color: white;">Claudia</button>
+</div>
 
-    <div id="profile-selection">
-        <h1 style="text-align: center;">Finansas IB</h1>
-        <p style="text-align: center; color: #aaa;">Seleccioná tu usuario:</p>
-        <button onclick="selectProfile('Ignacio')" style="background: var(--purple); color: white;">Ignacio</button>
-        <button onclick="selectProfile('Claudia')" style="background: #fd79a8; color: white;">Claudia</button>
+<div id="main-dashboard" class="hidden">
+    <div class="flex-between">
+        <h2 id="user-display"></h2>
+        <button onclick="logout()" style="width:auto; background:#333; color:white; padding:5px 10px;">Salir</button>
     </div>
-
-    <div id="main-dashboard" class="hidden">
-        <div class="flex-between">
-            <h2 id="user-display"></h2>
-            <button onclick="logout()" style="width: auto; background: #333; font-size: 0.7rem; padding: 5px 10px;">Salir</button>
-        </div>
-        
-        <div class="card">
-            <small style="color: #aaa;">Saldo Neto Actual</small>
-            <h1 id="net-balance" style="margin: 5px 0;">$0</h1>
-        </div>
-        
-        <button onclick="showTab('add')" style="background: var(--green); color: white;">+ Nuevo Movimiento</button>
-        
-        <h3 style="margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 5px;">Historial</h3>
-        <div id="history-list">
-            <p style="color: #666; text-align: center;">Cargando movimientos...</p>
-        </div>
+    
+    <div class="card">
+        <small>Saldo Neto</small>
+        <h1 id="net-balance" style="color:#00b894">$0</h1>
     </div>
+    
+    <button onclick="showTab('add')" style="background:#00b894; color:white;">+ NUEVO MOVIMIENTO</button>
+    
+    <h3>Historial</h3>
+    <div id="history-list">Cargando...</div>
+</div>
 
-    <div id="tab-add" class="hidden">
-        <h2>Cargar Dato</h2>
-        <label>Monto ($)</label>
-        <input type="number" id="amount" placeholder="Ej: 5500" inputmode="decimal">
-        
-        <label>Descripción</label>
-        <input type="text" id="desc" placeholder="Ej: Super Mami / Nafta">
-        
-        <label>Categoría</label>
-        <select id="cat">
-            <option value="Comida">Comida / Súper</option>
-            <option value="Servicios">Servicios (Luz, Agua, Internet)</option>
-            <option value="Nafta">Nafta / Transporte</option>
-            <option value="Varios">Varios / Gustos</option>
-            <option value="Sueldo">Sueldo / Ingreso</option>
-        </select>
-
-        <div style="display: flex; gap: 10px;">
-            <button onclick="addEntry('gasto')" style="background: var(--red); color: white;">GASTO</button>
-            <button onclick="addEntry('ingreso')" style="background: var(--green); color: white;">INGRESO</button>
-        </div>
-        <button onclick="showTab('home')" style="background: #444; color: white;">CANCELAR</button>
-    </div>
-
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBCtAu5W-S48pICmS9H0k7mKLiJpNKHSoQ",
-            authDomain: "finansas-ib.firebaseapp.com",
-            projectId: "finansas-ib",
-            storageBucket: "finansas-ib.firebasestorage.app",
-            messagingSenderId: "699584425602",
-            appId: "1:699584425602:web:0d793337469fbf02b00e9b"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        let currentUser = "";
-
-        function selectProfile(name) {
-            currentUser = name;
-            document.getElementById('user-display').innerText = "Hola, " + name;
-            document.getElementById('profile-selection').classList.add('hidden');
-            document.getElementById('main-dashboard').classList.remove('hidden');
-            escucharMovimientos();
-        }
-
-        function showTab(tab) {
-            document.getElementById('main-dashboard').classList.toggle('hidden', tab === 'add');
-            document.getElementById('tab-add').classList.toggle('hidden', tab === 'home');
-        }
-
-        function addEntry(type) {
-            const amount = parseFloat(document.getElementById('amount').value);
-            const desc = document.getElementById('desc').value;
-            const cat = document.getElementById('cat').value;
-
-            if (!amount || !desc) return alert("¡Llená todos los campos!");
-
-            db.collection("movimientos").add({
-                amount: amount,
-                desc: desc,
-                cat: cat,
-                type: type,
-                perfil: currentUser,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                document.getElementById('amount').value = "";
-                document.getElementById('desc').value = "";
-                showTab('home');
-            }).catch(err => alert("Error al guardar: " + err));
-        }
-
-        function escucharMovimientos() {
-            // Escucha cambios reales. Importante: Ordena por fecha.
-            db.collection("movimientos")
-                .where("perfil", "==", currentUser)
-                .orderBy("timestamp", "desc")
-                .onSnapshot((snapshot) => {
-                    const list = document.getElementById('history-list');
-                    let total = 0;
-                    list.innerHTML = "";
-                    
-                    if (snapshot.empty) {
-                        list.innerHTML = '<p style="text-align:center; color:#666;">No hay movimientos todavía.</p>';
-                    }
-
-                    snapshot.forEach((doc) => {
-                        const res = doc.data();
-                        const id = doc.id;
-                        const colorClass = res.type === 'ingreso' ? 'ingreso' : 'gasto';
-                        total += (res.type === 'ingreso' ? res.amount : -res.amount);
-
-                        list.innerHTML += `
-                            <div class="card ${colorClass}">
-                                <div class="flex-between">
-                                    <div>
-                                        <strong>${res.desc}</strong><br>
-                                        <small style="color:#aaa;">${res.cat}</small>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div style="font-weight:bold; color:${res.type==='ingreso'?'#00b894':'#ff7675'}">
-                                            ${res.type==='ingreso'?'+':'-'}$${res.amount.toLocaleString()}
-                                        </div>
-                                        <button class="btn-delete" onclick="borrarDato('${id}')">Borrar</button>
-                                    </div>
-                                </div>
-                            </div>`;
-                    });
-                    document.getElementById('net-balance').innerText = "$" + total.toLocaleString();
-                }, (error) => {
-                    console.error(error);
-                    if(error.code === 'failed-precondition') {
-                        alert("Firebase está creando el índice de orden. Esperá 1 minuto y recargá.");
-                    }
-                });
-        }
-
-        window.borrarDato = function(id) {
-            if (confirm("¿Querés borrar este registro?")) {
-                db.collection("movimientos").doc(id).delete();
-            }
-        };
-
-        function logout() { location.reload(); }
-    </script>
-</body>
-</html>
+<div id="tab-add" class="hidden">
+    <h2>Cargar Movimiento</h2>
+    <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
+    <input type="text" id="desc" placeholder="Descripción">
+    <select id="cat">
+        <option value="Comida">Comida / Súper</option>
+        <option value="Servicios">Servicios</option>
+        <option value="Nafta">Nafta / Transporte</option>
+        <option value="Varios">Varios</option>
+    </select>
+    <button onclick="addEntry('gasto')" style="background:#d63031; color:white;">ES GASTO</button>
+    <button onclick="addEntry('ingreso')" style="background:#00b894; color:white;">ES INGRESO</button>
+    <button onclick="showTab('home')" style="background:#444; color:white;">VOLVER</button>
+</div>
