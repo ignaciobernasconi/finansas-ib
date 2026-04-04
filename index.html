@@ -1,64 +1,61 @@
-<div id="profile-selection">
-    <h1 style="text-align:center">Finansas IB</h1>
-    <button onclick="selectProfile('Ignacio')" style="background:var(--purple); color:white">Ignacio</button>
-    <button onclick="selectProfile('Claudia')" style="background:#fd79a8; color:white">Claudia</button>
-</div>
-
-<div id="main-dashboard" class="hidden">
-    <div class="flex-between">
-        <h2 id="user-display"></h2>
-        <button onclick="logout()" style="width:auto; background:#333; color:white; padding:5px 15px">Salir</button>
+<div class="container">
+    <div id="profile-selection">
+        <h1 style="text-align:center">Finansas IB</h1>
+        <button onclick="selectProfile('Ignacio')" style="background:var(--purple)">Ignacio</button>
+        <button onclick="selectProfile('Claudia')" style="background:#fd79a8">Claudia</button>
     </div>
 
-    <div style="display:flex; gap:8px; margin-bottom:15px">
-        <button onclick="showTab('home')" style="background:#444; color:white">Home</button>
-        <button onclick="showTab('stats')" style="background:#444; color:white">Stats</button>
-        <button onclick="showTab('calendar')" style="background:#444; color:white">Meses</button>
-    </div>
-
-    <div id="tab-home" class="tab-content">
-        <div class="card" style="text-align:center">
-            <small style="color:var(--gray)">Saldo Disponible</small>
-            <h1 id="net-balance">$0</h1>
-            <hr style="border:0; border-top:1px solid #333; margin:15px 0">
-            <small style="color:var(--gray)">Ahorro Acumulado</small>
-            <h2 id="total-saved-big" style="margin:5px 0; color:var(--purple)">$0</h2>
+    <div id="main-dashboard" class="hidden">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:15px">
+            <h2 id="user-display" style="margin:0"></h2>
+            <button onclick="logout()" style="width:auto; background:#333; padding:5px 15px; margin:0">Salir</button>
         </div>
-        <button onclick="showTab('add')" style="background:var(--green); color:white">+ NUEVO MOVIMIENTO</button>
-        <button onclick="transferBalanceToSavings()" style="background:var(--purple); color:white">CERRAR MES Y AHORRAR</button>
-        <h3 style="margin-top:20px">Historial del Mes</h3>
-        <div id="history-list"></div>
-    </div>
 
-    <div id="tab-stats" class="tab-content hidden">
-        <h3>Distribución de Gastos</h3>
-        <div style="background:white; border-radius:15px; padding:15px">
-            <canvas id="myChart"></canvas>
+        <div style="display:flex; gap:5px; margin-bottom:15px">
+            <button onclick="showTab('home')" style="background:#444">Home</button>
+            <button onclick="showTab('stats')" style="background:#444">Stats</button>
+            <button onclick="showTab('calendar')" style="background:#444">Meses</button>
+        </div>
+
+        <div id="tab-home">
+            <div class="card">
+                <small style="color:var(--gray)">Saldo Neto Actual</small>
+                <h1 id="net-balance" style="color:var(--green); font-size: 2.5rem; margin:10px 0">$0</h1>
+                <hr style="border:0; border-top:1px solid #333; margin:15px 0">
+                <small style="color:var(--gray)">Ahorro en Caja</small>
+                <h2 id="total-saved-big" style="margin:5px 0; color:var(--purple)">$0</h2>
+            </div>
+            <button onclick="showTab('add')" style="background:var(--green)">+ NUEVO MOVIMIENTO</button>
+            <button onclick="transferBalanceToSavings()" style="background:var(--purple)">CERRAR MES (AHORRAR)</button>
+            <h3 style="border-bottom: 1px solid #333; padding-bottom:10px">Historial</h3>
+            <div id="history-list"></div>
+        </div>
+
+        <div id="tab-stats" class="hidden">
+            <h3>Gastos por Categoría</h3>
+            <div style="background:white; border-radius:15px; padding:15px"><canvas id="myChart"></canvas></div>
+        </div>
+
+        <div id="tab-calendar" class="hidden">
+            <h3>Cierres Anteriores</h3>
+            <div id="calendar-list"></div>
         </div>
     </div>
 
-    <div id="tab-calendar" class="tab-content hidden">
-        <h3>Cierres Anteriores</h3>
-        <div id="calendar-list"></div>
-    </div>
-
-    <div id="tab-add" class="tab-content hidden">
-        <h2>Cargar Dato</h2>
+    <div id="tab-add" class="hidden">
+        <h2>Nuevo Registro</h2>
         <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
-        <input type="text" id="desc" placeholder="Descripción (ej: Super Mami)">
+        <input type="text" id="desc" placeholder="Descripción">
         <select id="cat">
             <option value="Comida">Comida</option>
             <option value="Servicios">Servicios</option>
             <option value="Nafta">Nafta</option>
             <option value="Varios">Varios</option>
-            <option value="Sueldo">Sueldo / Ingreso</option>
         </select>
-        <div style="display:flex; gap:10px">
-            <button onclick="addEntry('gasto')" style="background:var(--red); color:white">GASTO</button>
-            <button onclick="addEntry('ingreso')" style="background:var(--green); color:white">INGRESO</button>
+        <div class="flex-row">
+            <button onclick="addEntry('gasto')" style="background:var(--red)">ES GASTO</button>
+            <button onclick="addEntry('ingreso')" style="background:var(--green)">ES INGRESO</button>
         </div>
-        <button onclick="showTab('home')" style="background:#444; color:white">CANCELAR</button>
+        <button onclick="showTab('home')" style="background:#444">VOLVER</button>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
