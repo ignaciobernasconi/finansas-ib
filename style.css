@@ -2,16 +2,28 @@
     --bg: #121212; --card: #1e1e1e; --purple: #6c5ce7; 
     --green: #00b894; --red: #d63031; --text: #ffffff; --gray: #aaa;
 }
-body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
-.card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 6px solid var(--purple); }
-.ingreso { border-left-color: var(--green); }
-.gasto { border-left-color: var(--red); }
-button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-button:active { transform: scale(0.98); }
-input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; background: #252525; color: white; border: 1px solid #333; font-size: 1rem; }
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: var(--bg); color: var(--text); 
+    margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; 
+}
+.container { width: 100%; max-width: 450px; }
+.card { 
+    background: var(--card); padding: 20px; border-radius: 15px; 
+    margin-bottom: 15px; border-left: 6px solid var(--purple); 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: center;
+}
+button { 
+    width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; 
+    border: none; font-weight: bold; font-size: 1rem; cursor: pointer; color: white;
+}
+input, select { 
+    width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; 
+    background: #252525; color: white; border: 1px solid #333; box-sizing: border-box;
+}
 .hidden { display: none; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.btn-delete { width: auto; padding: 6px 12px; background: rgba(214, 48, 49, 0.1); color: var(--red); border: 1px solid var(--red); font-size: 0.8rem; }
-.tab-content { margin-top: 10px; }
-.month-card { background: #252525; padding: 12px; margin-bottom: 8px; border-radius: 8px; border-right: 4px solid var(--green); }
-#net-balance { font-size: 2.5rem; margin: 5px 0; color: var(--green); }
+.flex-row { display: flex; gap: 10px; }
+.btn-delete { 
+    width: auto; padding: 5px 10px; background: transparent; 
+    color: var(--red); border: 1px solid var(--red); font-size: 0.8rem; margin-top: 5px;
+}
