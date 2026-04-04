@@ -6,6 +6,7 @@
     <title>Finansas IB</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
     <style>
         :root {
             --bg: #121212; --card: #1e1e1e; --purple: #6c5ce7; 
@@ -21,16 +22,17 @@
             margin-bottom: 15px; border-left: 6px solid var(--purple); 
             box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: center;
         }
-        /* Menú de botones superiores */
         .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; }
-        .nav-menu button { background: #333; flex: 1; padding: 10px; font-size: 0.9rem; }
+        .nav-menu button { background: #333; flex: 1; padding: 10px; font-size: 0.8rem; margin: 0; }
         
         button { 
             width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; 
-            border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.3s;
+            border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s;
         }
+        button:active { transform: scale(0.98); }
         .btn-add { background: var(--green); }
         .btn-save { background: var(--purple); }
+        .btn-manual { background: #2d3436; border: 1px solid var(--purple); font-size: 0.9rem; }
         
         input, select { 
             width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; 
@@ -40,7 +42,6 @@
         .item-list { 
             background: var(--card); padding: 15px; border-radius: 12px; 
             margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
-            border-left: 4px solid var(--gray);
         }
         .btn-delete { 
             width: auto; padding: 6px 12px; background: rgba(214, 48, 49, 0.1); 
@@ -59,26 +60,29 @@
 
     <div id="main-dashboard" class="hidden">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:15px">
-            <h2 id="user-display" style="margin:0; font-size: 1.2rem;"></h2>
-            <button onclick="logout()" style="width:auto; background:#444; padding:5px 12px; margin:0; font-size:0.8rem">Salir</button>
+            <h2 id="user-display" style="margin:0; font-size: 1.1rem;"></h2>
+            <button onclick="logout()" style="width:auto; background:#333; padding:5px 12px; margin:0; font-size:0.7rem">Salir</button>
         </div>
 
         <div class="nav-menu">
-            <button onclick="showTab('home')">Home</button>
-            <button onclick="showTab('stats')">Stats</button>
-            <button onclick="showTab('calendar')">Meses</button>
+            <button onclick="showTab('home')">HOME</button>
+            <button onclick="showTab('stats')">STATS</button>
+            <button onclick="showTab('calendar')">MESES</button>
         </div>
 
         <div id="tab-home">
             <div class="card">
-                <small style="color:var(--gray)">Saldo Disponible</small>
-                <h1 id="net-balance" style="color:var(--green); margin:10px 0; font-size: 2.5rem;">$0</h1>
-                <hr style="border:0; border-top:1px solid #333; margin:15px 0">
+                <small style="color:var(--gray)">Saldo del Mes</small>
+                <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.5rem;">$0</h1>
+                <hr style="border:0; border-top:1px solid #333; margin:10px 0">
                 <small style="color:var(--gray)">Ahorro Acumulado</small>
                 <h2 id="total-saved-big" style="color:var(--purple); margin:5px 0">$0</h2>
             </div>
+
+            <button class="btn-manual" onclick="agregarAhorroManual()">💰 CARGAR AHORRO INICIAL</button>
             <button class="btn-add" onclick="showTab('add')">+ NUEVO MOVIMIENTO</button>
-            <button class="btn-save" onclick="transferBalanceToSavings()">CERRAR MES (AHORRAR)</button>
+            <button class="btn-save" onclick="cerrarMesAutomatico()">🔒 CERRAR MES (PASAR A AHORRO)</button>
+            
             <h3 style="margin-top:20px; border-bottom: 1px solid #333; padding-bottom: 5px;">Historial</h3>
             <div id="history-list"></div>
         </div>
@@ -89,13 +93,13 @@
         </div>
 
         <div id="tab-calendar" class="hidden">
-            <h3>Cierres de Mes</h3>
+            <h3>Historial de Cierres</h3>
             <div id="calendar-list"></div>
         </div>
     </div>
 
     <div id="tab-add" class="hidden">
-        <h2>Cargar Movimiento</h2>
+        <h2>Nuevo Registro</h2>
         <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
         <input type="text" id="desc" placeholder="Descripción">
         <select id="cat">
@@ -114,6 +118,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBCtAu5W-S48pICmS9H0k7mKLiJpNKHSoQ",
         authDomain: "finansas-ib.firebaseapp.com",
@@ -124,7 +129,8 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let currentUser = "", transactions = [], totalAhorrado = 0, myChart = null;
+    
+    let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, myChart = null;
 
     function selectProfile(name) {
         currentUser = name;
@@ -149,6 +155,15 @@
             totalAhorrado = doc.exists ? doc.data().total : 0;
             document.getElementById('total-saved-big').innerText = "$" + totalAhorrado.toLocaleString();
         });
+        db.collection("historial_cierres").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
+            const list = document.getElementById('calendar-list');
+            list.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                list.innerHTML += `<div class="item-list" style="border-right: 4px solid var(--green)">
+                    <strong>${d.mes} ${d.año}</strong>: +$${d.monto_final.toLocaleString()}</div>`;
+            });
+        });
     }
 
     function renderUI() {
@@ -158,7 +173,7 @@
         transactions.forEach(t => {
             net += (t.type === 'ingreso' ? t.amount : -t.amount);
             list.innerHTML += `
-                <div class="item-list" style="border-left-color: ${t.type==='ingreso'?'var(--green)':'var(--red)'}">
+                <div class="item-list" style="border-left: 5px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}">
                     <div><strong>${t.desc}</strong><br><small style="color:var(--gray)">${t.cat}</small></div>
                     <div style="text-align:right">
                         <div style="font-weight:bold; color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div>
@@ -166,6 +181,7 @@
                     </div>
                 </div>`;
         });
+        currentSaldoNeto = net;
         document.getElementById('net-balance').innerText = "$" + net.toLocaleString();
     }
 
@@ -181,10 +197,40 @@
         showTab('home');
     }
 
+    window.agregarAhorroManual = function() {
+        const monto = parseFloat(prompt("¿Cuánto ahorro querés sumar a la caja hoy?"));
+        if (isNaN(monto) || monto <= 0) return;
+        db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + monto })
+            .then(() => alert("¡Ahorro actualizado!"));
+    };
+
+    window.cerrarMesAutomatico = function() {
+        if (currentSaldoNeto <= 0) return alert("No hay saldo positivo para ahorrar.");
+        if (confirm(`¿Cerrar mes? Se guardarán $${currentSaldoNeto.toLocaleString()} en tus ahorros y se limpiará el historial.`)) {
+            db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
+            .then(() => {
+                return db.collection("historial_cierres").add({
+                    perfil: currentUser, monto_final: currentSaldoNeto,
+                    mes: new Date().toLocaleString('es-AR', { month: 'long' }),
+                    año: new Date().getFullYear(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            })
+            .then(() => {
+                transactions.forEach(t => db.collection("movimientos").doc(t.id).delete());
+                alert("¡Mes cerrado!");
+            });
+        }
+    };
+
     function borrarDato(id) { if(confirm("¿Borrar?")) db.collection("movimientos").doc(id).delete(); }
     function logout() { location.reload(); }
-    function updateChart() { /* Lógica de gráfico */ }
-    function transferBalanceToSavings() { /* Lógica de ahorro */ }
+    function updateChart() {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const totals = {};
+        transactions.filter(t => t.type === 'gasto').forEach(t => totals[t.cat] = (totals[t.cat] || 0) + t.amount);
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6c5ce7', '#00b894', '#fd79a8', '#fab1a0'] }] } });
+    }
 </script>
 </body>
 </html>
