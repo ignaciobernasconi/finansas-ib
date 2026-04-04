@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div id="app">
+  <div id="profile-selection" class="screen">
+    <div class="welcome-header">
+      <h1>Finanzas 2026 💰</h1>
+      <p>Seleccioná tu perfil</p>
+    </div>
+    <div class="profile-grid">
+      <div class="profile-box" onclick="selectProfile('Ignacio')">
+        <div class="avatar ignacio">IB</div>
+        <span>Ignacio</span>
+      </div>
+      <div class="profile-box" onclick="selectProfile('Claudia')">
+        <div class="avatar claudia">CP</div>
+        <span>Claudia</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="main-dashboard" class="screen hidden">
+    <div class="top-bar">
+      <h3 id="user-display">Usuario</h3>
+      <button onclick="logout()" class="btn-logout">⬅️ Salir</button>
+    </div>
+
+    <div id="tab-home" class="tab-content">
+      <div class="balance-card">
+        <p>Saldo del Mes</p>
+        <h2 id="net-balance">$0</h2>
+        <div class="mini-stats">
+          <div class="in">▲ <span id="total-income">$0</span></div>
+          <div class="out">▼ <span id="total-expense">$0</span></div>
+        </div>
+      </div>
+      <div id="history-list"></div>
+    </div>
+
+    <div id="tab-calendar" class="tab-content hidden">
+      <h2 style="text-align:center">Historial de Cierres 📅</h2>
+      <div id="calendar-list"></div>
+    </div>
+
+    <div id="tab-savings" class="tab-content hidden">
+      <div class="savings-container">
+        <h2>Caja de Ahorro 🏦</h2>
+        <div class="big-savings-badge" id="total-saved-big">$0</div>
+        <button class="btn-save-all" onclick="transferBalanceToSavings()">🏦 Cerrar Mes y Archivar</button>
+        <div class="manual-save">
+          <input type="number" id="manual-savings-amount" placeholder="Monto $">
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="btn-add-save" onclick="manualSavingsChange('suma')">➕ Sumar</button>
+            <button class="btn-sub-save" onclick="manualSavingsChange('resta')">➖ Quitar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-stats" class="tab-content hidden">
+      <div class="stats-card">
+        <h2 style="text-align:center">Gastos por Categoría</h2>
+        <canvas id="myChart"></canvas>
+      </div>
+    </div>
+
+    <div id="tab-add" class="tab-content hidden">
+      <div class="form-container">
+        <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
+        <input type="text" id="desc" placeholder="Descripción">
+        <select id="cat">
+          <option value="Nafta">⛽ Nafta</option>
+          <option value="Alimentos">🛒 Alimentos</option>
+          <option value="Varios">✨ Varios</option>
+        </select>
+        <div class="type-selector">
+          <button id="btn-gasto" class="active" onclick="setType('gasto')">Gasto</button>
+          <button id="btn-ingreso" onclick="setType('ingreso')">Ingreso</button>
+        </div>
+        <button class="save-btn" onclick="addEntry()">Guardar</button>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="showTab('home')">🏠<br>Inicio</div>
+      <div class="nav-item" onclick="showTab('calendar')">📅<br>Cierres</div>
+      <div class="nav-item add-circle" onclick="openAddTab()">+</div>
+      <div class="nav-item" onclick="showTab('savings')">💰<br>Ahorro</div>
+      <div class="nav-item" onclick="showTab('stats')">📊<br>Stats</div>
+    </nav>
+  </div>
+</div>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>
