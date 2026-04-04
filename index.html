@@ -6,7 +6,6 @@
     <title>Finansas IB</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
     <style>
         :root {
             --bg: #121212; --card: #1e1e1e; --purple: #6c5ce7; 
@@ -37,11 +36,11 @@
         }
         .hidden { display: none; }
         .item-list { 
-            background: var(--card); padding: 15px; border-radius: 12px; 
+            background: var(--card); padding: 12px; border-radius: 12px; 
             margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
         }
         .btn-delete { 
-            width: auto; padding: 6px 12px; background: rgba(214, 48, 49, 0.1); 
+            width: auto; padding: 6px 10px; background: rgba(214, 48, 49, 0.1); 
             color: var(--red); border: 1px solid var(--red); font-size: 0.7rem; margin: 0;
         }
     </style>
@@ -69,27 +68,31 @@
 
         <div id="tab-home">
             <div class="card">
-                <small style="color:var(--gray)">Saldo del Mes</small>
-                <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.5rem;">Cargando...</h1>
+                <small style="color:var(--gray)">Saldo / Gastos del Mes</small>
+                <div style="display: flex; justify-content: center; align-items: baseline; gap: 12px;">
+                    <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.3rem;">$0</h1>
+                    <h3 id="total-spent" style="color:var(--red); margin:0; font-size: 1.1rem; font-weight: normal; opacity: 0.9;">-$0</h3>
+                </div>
                 <hr style="border:0; border-top:1px solid #333; margin:15px 0">
-                <small style="color:var(--gray)">Ahorro Acumulado</small>
+                <small style="color:var(--gray)">Ahorro Total Acumulado</small>
                 <h2 id="total-saved-big" style="color:var(--purple); margin:5px 0">$0</h2>
             </div>
 
             <button class="btn-manual" onclick="agregarAhorroManual()">💰 CARGAR AHORRO INICIAL</button>
             <button class="btn-add" onclick="showTab('add')">+ NUEVO MOVIMIENTO</button>
-            <button class="btn-save" onclick="cerrarMesAutomatico()">🔒 CERRAR MES (PASAR A AHORRO)</button>
+            <button class="btn-save" onclick="cerrarMesAutomatico()">🔒 CERRAR MES (AHORRAR SALDO)</button>
             
             <h3 style="margin-top:20px; border-bottom: 1px solid #333; padding-bottom: 5px;">Historial</h3>
-            <div id="history-list">Esperando datos...</div>
+            <div id="history-list"></div>
         </div>
 
         <div id="tab-stats" class="hidden">
-            <h3>Distribución</h3>
+            <h3>Distribución de Gastos</h3>
             <div style="background:white; border-radius:15px; padding:15px"><canvas id="myChart"></canvas></div>
         </div>
+
         <div id="tab-calendar" class="hidden">
-            <h3>Historial de Cierres</h3>
+            <h3>Cierres Anteriores</h3>
             <div id="calendar-list"></div>
         </div>
     </div>
@@ -99,7 +102,6 @@
         <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
         <input type="text" id="desc" placeholder="Descripción">
         <select id="cat">
-            <option value="Cotelsa">Cotelsa</option>
             <option value="Comida">Comida</option>
             <option value="Servicios">Servicios</option>
             <option value="Nafta">Nafta</option>
@@ -125,7 +127,6 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    
     let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, myChart = null;
 
     function selectProfile(name) {
@@ -143,37 +144,27 @@
     }
 
     function iniciarEscuchas() {
-        // Escucha en tiempo real: más rápido que pedir los datos manualmente
         db.collection("movimientos").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
             transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderUI();
-        }, err => {
-            console.log("Error en historial:", err);
-            document.getElementById('history-list').innerText = "Error al cargar datos.";
         });
-
         db.collection("ahorros").doc(currentUser).onSnapshot(doc => {
             totalAhorrado = doc.exists ? doc.data().total : 0;
             document.getElementById('total-saved-big').innerText = "$" + totalAhorrado.toLocaleString();
         });
-
         db.collection("historial_cierres").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
-            const list = document.getElementById('calendar-list');
-            list.innerHTML = "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                list.innerHTML += `<div class="item-list" style="border-right: 4px solid var(--green)">
-                    <strong>${d.mes} ${d.año}</strong>: +$${d.monto_final.toLocaleString()}</div>`;
-            });
+            const list = document.getElementById('calendar-list'); list.innerHTML = "";
+            snap.forEach(doc => { const d = doc.data(); list.innerHTML += `<div class="item-list"><strong>${d.mes} ${d.año}</strong>: +$${d.monto_final.toLocaleString()}</div>`; });
         });
     }
 
     function renderUI() {
         const list = document.getElementById('history-list');
-        list.innerHTML = transactions.length === 0 ? "Sin movimientos este mes." : "";
-        let net = 0;
+        list.innerHTML = "";
+        let net = 0; let spent = 0;
         transactions.forEach(t => {
-            net += (t.type === 'ingreso' ? t.amount : -t.amount);
+            if(t.type === 'ingreso') { net += t.amount; } 
+            else { net -= t.amount; spent += t.amount; }
             list.innerHTML += `
                 <div class="item-list" style="border-left: 5px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}">
                     <div><strong>${t.desc}</strong><br><small style="color:var(--gray)">${t.cat}</small></div>
@@ -185,44 +176,35 @@
         });
         currentSaldoNeto = net;
         document.getElementById('net-balance').innerText = "$" + net.toLocaleString();
+        document.getElementById('total-spent').innerText = "-$" + spent.toLocaleString();
     }
 
     function addEntry(type) {
         const amount = parseFloat(document.getElementById('amount').value);
         const desc = document.getElementById('desc').value;
         if (!amount || !desc) return alert("Faltan datos");
-        
         db.collection("movimientos").add({
             amount, desc, cat: document.getElementById('cat').value, type,
             perfil: currentUser, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-            document.getElementById('amount').value = ""; 
-            document.getElementById('desc').value = "";
-            showTab('home');
         });
+        document.getElementById('amount').value = ""; document.getElementById('desc').value = "";
+        showTab('home');
     }
 
-    // Mantener funciones agregarAhorroManual, cerrarMesAutomatico, borrarDato y logout igual que antes.
     window.agregarAhorroManual = function() {
-        const monto = parseFloat(prompt("¿Cuánto ahorro querés sumar a la caja hoy?"));
-        if (isNaN(monto) || monto <= 0) return;
-        db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + monto });
+        const m = parseFloat(prompt("¿Cuánto ahorro querés sumar hoy?"));
+        if (!isNaN(m) && m > 0) db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + m });
     };
 
     window.cerrarMesAutomatico = function() {
-        if (currentSaldoNeto <= 0) return alert("No hay saldo positivo para ahorrar.");
-        if (confirm(`¿Cerrar mes? Se guardarán $${currentSaldoNeto.toLocaleString()} en tus ahorros.`)) {
+        if (currentSaldoNeto <= 0) return alert("No hay saldo para ahorrar.");
+        if (confirm(`¿Cerrar mes y ahorrar $${currentSaldoNeto.toLocaleString()}?`)) {
             db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
-            .then(() => {
-                return db.collection("historial_cierres").add({
-                    perfil: currentUser, monto_final: currentSaldoNeto,
-                    mes: new Date().toLocaleString('es-AR', { month: 'long' }),
-                    año: new Date().getFullYear(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            })
-            .then(() => {
-                transactions.forEach(t => db.collection("movimientos").doc(t.id).delete());
-            });
+            .then(() => db.collection("historial_cierres").add({
+                perfil: currentUser, monto_final: currentSaldoNeto, mes: new Date().toLocaleString('es-AR',{month:'long'}),
+                año: new Date().getFullYear(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }))
+            .then(() => transactions.forEach(t => db.collection("movimientos").doc(t.id).delete()));
         }
     };
 
@@ -233,7 +215,7 @@
         const totals = {};
         transactions.filter(t => t.type === 'gasto').forEach(t => totals[t.cat] = (totals[t.cat] || 0) + t.amount);
         if (myChart) myChart.destroy();
-        myChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6c5ce7', '#00b894', '#fd79a8', '#fab1a0', '#0984e3'] }] } });
+        myChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6c5ce7','#00b894','#fd79a8','#fab1a0'] }] } });
     }
 </script>
 </body>
