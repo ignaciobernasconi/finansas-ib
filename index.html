@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finansas IB</title>
+    <title>Finansas IB - Privado</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
@@ -50,8 +50,11 @@
 <div class="container">
     <div id="profile-selection">
         <h1 style="text-align:center">Finansas IB</h1>
-        <button onclick="selectProfile('Ignacio')" style="background:var(--purple)">Ignacio</button>
-        <button onclick="selectProfile('Claudia')" style="background:#fd79a8">Claudia</button>
+        <p style="text-align:center; color:var(--gray); font-size: 0.9rem;">Seleccioná tu perfil para ingresar</p>
+        
+        <button onclick="intentarAcceso('Ignacio')" style="background:var(--purple)">Ignacio</button>
+        <button onclick="intentarAcceso('Claudia')" style="background:#fd79a8">Claudia</button>
+        <button onclick="intentarAcceso('Johan Medina')" style="background:#0984e3">Johan Medina</button>
     </div>
 
     <div id="main-dashboard" class="hidden">
@@ -90,7 +93,6 @@
             <h3>Distribución de Gastos</h3>
             <div style="background:white; border-radius:15px; padding:15px"><canvas id="myChart"></canvas></div>
         </div>
-
         <div id="tab-calendar" class="hidden">
             <h3>Cierres Anteriores</h3>
             <div id="calendar-list"></div>
@@ -111,12 +113,13 @@
             <button onclick="addEntry('gasto')" style="background:var(--red)">GASTO</button>
             <button onclick="addEntry('ingreso')" style="background:var(--green)">INGRESO</button>
         </div>
-        <button onclick="showTab('home')" style="background:#444">CANCELAR</button>
+        <button onclick="showTab('home')" style="background:#444">VOLVER</button>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBCtAu5W-S48pICmS9H0k7mKLiJpNKHSoQ",
         authDomain: "finansas-ib.firebaseapp.com",
@@ -127,16 +130,43 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
     let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, myChart = null;
+
+    // SISTEMA DE PIN PRIVADO
+    async function intentarAcceso(nombre) {
+        const docRef = db.collection("config_perfiles").doc(nombre);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            const nuevoPin = prompt(`Bienvenido ${nombre}. Creá un PIN de seguridad para este perfil:`);
+            if (nuevoPin && nuevoPin.length >= 4) {
+                await docRef.set({ pin: nuevoPin });
+                alert("✅ PIN guardado. Usalo cada vez que quieras entrar.");
+                selectProfile(nombre);
+            } else {
+                alert("❌ El PIN debe tener al menos 4 números.");
+            }
+        } else {
+            const pinCorrecto = doc.data().pin;
+            const pinIngresado = prompt(`Ingresá el PIN para ${nombre}:`);
+            if (pinIngresado === pinCorrecto) {
+                selectProfile(nombre);
+            } else {
+                alert("❌ PIN incorrecto.");
+            }
+        }
+    }
 
     function selectProfile(name) {
         currentUser = name;
-        document.getElementById('user-display').innerText = "Hola, " + name;
+        document.getElementById('user-display').innerText = "Perfil: " + name;
         document.getElementById('profile-selection').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         iniciarEscuchas();
     }
 
+    // EL RESTO DE LA LÓGICA
     function showTab(t) {
         ['home', 'stats', 'calendar', 'add'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
         document.getElementById('tab-'+t).classList.remove('hidden');
@@ -159,12 +189,10 @@
     }
 
     function renderUI() {
-        const list = document.getElementById('history-list');
-        list.innerHTML = "";
-        let net = 0; let spent = 0;
+        const list = document.getElementById('history-list'); list.innerHTML = "";
+        let net = 0, spent = 0;
         transactions.forEach(t => {
-            if(t.type === 'ingreso') { net += t.amount; } 
-            else { net -= t.amount; spent += t.amount; }
+            if(t.type === 'ingreso') net += t.amount; else { net -= t.amount; spent += t.amount; }
             list.innerHTML += `
                 <div class="item-list" style="border-left: 5px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}">
                     <div><strong>${t.desc}</strong><br><small style="color:var(--gray)">${t.cat}</small></div>
@@ -174,9 +202,9 @@
                     </div>
                 </div>`;
         });
-        currentSaldoNeto = net;
         document.getElementById('net-balance').innerText = "$" + net.toLocaleString();
         document.getElementById('total-spent').innerText = "-$" + spent.toLocaleString();
+        currentSaldoNeto = net;
     }
 
     function addEntry(type) {
@@ -208,7 +236,7 @@
         }
     };
 
-    function borrarDato(id) { if(confirm("¿Borrar?")) db.collection("movimientos").doc(id).delete(); }
+    function borrarDato(id) { if(confirm("¿Borrar movimiento?")) db.collection("movimientos").doc(id).delete(); }
     function logout() { location.reload(); }
     function updateChart() {
         const ctx = document.getElementById('myChart').getContext('2d');
