@@ -11,35 +11,20 @@
         :root {
             --bg: #0a0a0a; --card: #161616; --purple: #8e44ad; 
             --green: #2ecc71; --red: #e74c3c; --text: #ffffff; --gray: #777;
-            --gold: #f1c40f;
         }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 450px; }
-        
-        /* SECCIONES DE PERFILES */
         .section-title { font-size: 0.8rem; color: var(--gray); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px 10px; text-align: left; width: 100%; }
-        
         .main-profiles { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
         .guest-profiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
-        .profile-card { 
-            background: var(--card); border-radius: 20px; text-align: center; cursor: pointer; 
-            transition: all 0.2s ease; border: 1px solid #222; position: relative; overflow: hidden;
-        }
-        
-        /* Estilo para Ignacio y Claudia */
+        .profile-card { background: var(--card); border-radius: 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; border: 1px solid #222; position: relative; overflow: hidden; }
         .profile-card.main { padding: 25px 10px; border-bottom: 4px solid var(--purple); }
         .profile-card.main .avatar { width: 60px; height: 60px; font-size: 1.8rem; margin-bottom: 10px; background: linear-gradient(45deg, var(--purple), #6c5ce7); }
-        
-        /* Estilo para Amigos */
         .profile-card.guest { padding: 15px 5px; background: #111; }
         .profile-card.guest .avatar { width: 40px; height: 40px; font-size: 1.1rem; margin-bottom: 5px; background: #333; }
         .profile-card.guest .name { font-size: 0.8rem; color: #bbb; }
-
         .avatar { border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .name { font-weight: 600; }
-        
-        /* DASHBOARD Y OTROS */
         .card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px; border-left: 6px solid var(--purple); }
         button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; }
         .btn-add { background: var(--green); }
@@ -57,15 +42,10 @@
 <div class="container">
     <div id="profile-selection">
         <h1 onclick="activarAdmin()" style="text-align:center; margin-top:30px; letter-spacing: -1px;">Finansas IB</h1>
-        
         <div class="section-title">Principales</div>
-        <div id="main-profiles-container" class="main-profiles">
-            </div>
-
+        <div id="main-profiles-container" class="main-profiles"></div>
         <div class="section-title">Amigos</div>
-        <div id="guest-profiles-container" class="guest-profiles">
-            </div>
-
+        <div id="guest-profiles-container" class="guest-profiles"></div>
         <button id="btn-admin-add" onclick="abrirCrearPerfil()" class="hidden" style="background:transparent; border:1px dashed #444; color:#555; margin-top:30px; font-size: 0.8rem;">+ AGREGAR ESPACIO AMIGO</button>
     </div>
 
@@ -146,20 +126,12 @@
             const mainCont = document.getElementById('main-profiles-container');
             const guestCont = document.getElementById('guest-profiles-container');
             mainCont.innerHTML = ""; guestCont.innerHTML = "";
-
             snap.forEach(doc => {
                 const nombre = doc.id;
                 const inicial = nombre.charAt(0).toUpperCase();
                 const esPrincipal = (nombre.toLowerCase() === "ignacio" || nombre.toLowerCase() === "claudia");
-                
-                const html = `
-                    <div onclick="intentarAcceso('${nombre}')" class="profile-card ${esPrincipal ? 'main' : 'guest'}">
-                        <div class="avatar">${inicial}</div>
-                        <div class="name">${nombre}</div>
-                    </div>`;
-
-                if (esPrincipal) mainCont.innerHTML += html;
-                else guestCont.innerHTML += html;
+                const html = `<div onclick="intentarAcceso('${nombre}')" class="profile-card ${esPrincipal ? 'main' : 'guest'}"><div class="avatar">${inicial}</div><div class="name">${nombre}</div></div>`;
+                if (esPrincipal) mainCont.innerHTML += html; else guestCont.innerHTML += html;
             });
         });
     }
@@ -169,7 +141,6 @@
         const pin = doc.data().pin;
         document.getElementById('pin-modal').classList.remove('hidden');
         document.getElementById('pin-input').value = "";
-        
         if (!pin || pin === "") {
             document.getElementById('modal-title').innerText = "Crear PIN";
             document.getElementById('pin-msg').innerText = "Perfil nuevo. Elegí 4 números:";
@@ -224,10 +195,18 @@
                 const d = t.timestamp.toDate();
                 timeStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} - ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}hs`;
             }
-            list.innerHTML += `<div class="item-list" style="border-left: 4px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}"><div><strong>${t.desc}</strong><br><small style="color:#666; font-size:0.7rem">${timeStr}</small></div><div style="text-align:right"><div style="color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div><button onclick="solicitarBorrar('${t.id}')" style="background:none; color:var(--red); font-size:0.6rem; padding:0; width:auto; margin:0">Eliminar</button></div></div>`;
+            list.innerHTML += `<div class="item-list" style="border-left: 4px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}"><div><strong>${t.desc}</strong><br><small style="color:#666; font-size:0.7rem">${timeStr}</small></div><div style="text-align:right"><div style="color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div><button onclick="solicitarBorrar('${t.id}')" style="background:rgba(231, 76, 60, 0.1); color:var(--red); font-size:0.6rem; padding:4px 8px; width:auto; margin:5px 0 0 0; border-radius:5px">Eliminar</button></div></div>`;
         });
         document.getElementById('net-balance').innerText = "$" + net.toLocaleString();
         currentSaldoNeto = net;
+    }
+
+    // FUNCIÓN DE ELIMINACIÓN REPARADA
+    function solicitarBorrar(id) {
+        if (confirm("¿Seguro que querés eliminar este registro?")) {
+            db.collection("movimientos").doc(id).delete()
+            .catch(e => alert("Error: " + e));
+        }
     }
 
     function updateCharts() {
