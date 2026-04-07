@@ -33,12 +33,7 @@
             width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; 
             background: #252525; color: white; border: 1px solid #333; box-sizing: border-box;
         }
-        .hidden { display: none; }
-        .item-list { 
-            background: var(--card); padding: 12px; border-radius: 12px; 
-            margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
-        }
-        /* Estilo para las tarjetas de perfil */
+        .hidden { display: none !important; }
         .profile-card {
             background: var(--card); padding: 20px; border-radius: 15px;
             border-bottom: 4px solid var(--purple); cursor: pointer; transition: 0.3s;
@@ -47,8 +42,8 @@
         
         #pin-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center;
-            z-index: 10000; backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center;
+            z-index: 10000; backdrop-filter: blur(8px);
         }
     </style>
 </head>
@@ -58,13 +53,8 @@
     <div id="profile-selection">
         <h1 style="text-align:center; margin-bottom:5px">Finansas IB</h1>
         <p style="text-align:center; color:var(--gray); margin-bottom:30px">¿Quién está usando la app?</p>
-        
-        <div id="profiles-grid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px">
-            </div>
-
-        <button onclick="abrirCrearPerfil()" style="background:transparent; border:2px dashed var(--purple); color:var(--purple); margin-top:30px">
-            + AGREGAR PERFIL
-        </button>
+        <div id="profiles-grid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px"></div>
+        <button onclick="abrirCrearPerfil()" style="background:transparent; border:2px dashed var(--purple); color:var(--purple); margin-top:30px">+ AGREGAR PERFIL</button>
     </div>
 
     <div id="main-dashboard" class="hidden">
@@ -72,13 +62,10 @@
             <h2 id="user-display" style="margin:0; font-size: 1.1rem;"></h2>
             <button onclick="logout()" style="width:auto; background:#333; padding:5px 12px; margin:0; font-size:0.7rem">Salir</button>
         </div>
-
         <div class="nav-menu">
             <button onclick="showTab('home')">HOME</button>
             <button onclick="showTab('stats')">STATS</button>
-            <button onclick="showTab('calendar')">MESES</button>
         </div>
-
         <div id="tab-home">
             <div class="card">
                 <small style="color:var(--gray)">Saldo / Gastos del Mes</small>
@@ -94,7 +81,6 @@
             <button class="btn-save" onclick="cerrarMesAutomatico()">🔒 CERRAR MES</button>
             <div id="history-list" style="margin-top:20px"></div>
         </div>
-
         <div id="tab-add" class="hidden">
             <h2>Nuevo Registro</h2>
             <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
@@ -109,9 +95,7 @@
             </div>
             <button onclick="showTab('home')" style="background:#444">VOLVER</button>
         </div>
-        
         <div id="tab-stats" class="hidden"><canvas id="myChart"></canvas></div>
-        <div id="tab-calendar" class="hidden"><div id="calendar-list"></div></div>
     </div>
 </div>
 
@@ -129,6 +113,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBCtAu5W-S48pICmS9H0k7mKLiJpNKHSoQ",
         authDomain: "finansas-ib.firebaseapp.com",
@@ -140,9 +125,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, userTemp = "";
+    let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0;
 
-    // 1. CARGAR PERFILES DESDE FIREBASE
+    // --- FUNCIÓN DE ARRANQUE LIMPIO ---
+    function inicializarApp() {
+        document.getElementById('pin-modal').classList.add('hidden');
+        document.getElementById('main-dashboard').classList.add('hidden');
+        document.getElementById('profile-selection').classList.remove('hidden');
+        cargarPerfiles();
+    }
+
     function cargarPerfiles() {
         db.collection("config_perfiles").onSnapshot(snap => {
             const grid = document.getElementById('profiles-grid');
@@ -156,31 +148,24 @@
             });
         });
     }
-    cargarPerfiles();
 
-    // 2. SISTEMA DE PIN PERSONALIZADO (SIN CARTEL DEL NAVEGADOR)
+    // --- ACTIVAR PIN SOLO AL HACER CLIC ---
     async function intentarAcceso(nombre) {
-        userTemp = nombre;
         const doc = await db.collection("config_perfiles").doc(nombre).get();
         const pinCorrecto = doc.data().pin;
         
+        // RECIÉN ACÁ quitamos el "hidden"
         document.getElementById('pin-modal').classList.remove('hidden');
-        document.getElementById('pin-msg').innerText = "Ingresá el PIN para " + nombre;
+        document.getElementById('pin-msg').innerText = "Clave para " + nombre;
         document.getElementById('pin-input').value = "";
         document.getElementById('pin-input').focus();
 
         document.getElementById('btn-confirmar-pin').onclick = () => {
             if(document.getElementById('pin-input').value === pinCorrecto) {
-                cerrarPin(); selectProfile(nombre);
+                cerrarPin(); 
+                selectProfile(nombre);
             } else { alert("❌ PIN Incorrecto"); }
         };
-    }
-
-    async function abrirCrearPerfil() {
-        const n = prompt("Nombre del nuevo perfil:");
-        if(!n) return;
-        const p = prompt("Creá un PIN de 4 números:");
-        if(p && p.length >= 4) await db.collection("config_perfiles").doc(n).set({ pin: p });
     }
 
     function selectProfile(name) {
@@ -194,7 +179,13 @@
     function cerrarPin() { document.getElementById('pin-modal').classList.add('hidden'); }
     function logout() { location.reload(); }
 
-    // LÓGICA DE DATOS
+    async function abrirCrearPerfil() {
+        const n = prompt("Nombre del nuevo perfil:");
+        if(!n) return;
+        const p = prompt("Creá un PIN de 4 números:");
+        if(p && p.length >= 4) await db.collection("config_perfiles").doc(n).set({ pin: p });
+    }
+
     function iniciarEscuchas() {
         db.collection("movimientos").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
             transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -216,7 +207,7 @@
                     <div><strong>${t.desc}</strong><br><small>${t.cat}</small></div>
                     <div style="text-align:right">
                         <div style="font-weight:bold; color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div>
-                        <button onclick="borrarDato('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; border:none; padding:0">Borrar</button>
+                        <button onclick="borrarDato('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; border:none;">Borrar</button>
                     </div>
                 </div>`;
         });
@@ -238,19 +229,22 @@
     }
 
     function showTab(t) {
-        ['home', 'stats', 'calendar', 'add'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
+        ['home', 'stats', 'add'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
         document.getElementById('tab-'+t).classList.remove('hidden');
     }
 
     function borrarDato(id) { if(confirm("¿Borrar?")) db.collection("movimientos").doc(id).delete(); }
 
-    window.cerrarMesAutomatico = function() {
+    function cerrarMesAutomatico() {
         if (currentSaldoNeto <= 0) return alert("Nada que ahorrar.");
-        if (confirm(`¿Ahorrar $${currentSaldoNeto.toLocaleString()} y cerrar mes?`)) {
+        if (confirm(`¿Ahorrar $${currentSaldoNeto.toLocaleString()}?`)) {
             db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
             .then(() => transactions.forEach(t => db.collection("movimientos").doc(t.id).delete()));
         }
-    };
+    }
+
+    // ARRANCAR LA APP
+    inicializarApp();
 </script>
 </body>
 </html>
