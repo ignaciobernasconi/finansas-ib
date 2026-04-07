@@ -65,7 +65,7 @@
                 <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.5rem;">$0</h1>
             </div>
             <button class="btn-add" onclick="showTab('add')">+ MOVIMIENTO</button>
-            <button onclick="cerrarMesAutomatico()" style="background:var(--purple); font-size: 0.8rem;">🔒 CIERRE DE MES</button>
+            <button onclick="abrirCierreMes()" style="background:var(--purple); font-size: 0.8rem;">🔒 CIERRE DE MES</button>
             <div id="history-list" style="margin-top:15px"></div>
         </div>
         <div id="tab-stats" class="hidden"><canvas id="donutChart"></canvas><br><canvas id="areaChart"></canvas></div>
@@ -78,6 +78,15 @@
             <button onclick="addEntry('ingreso')" style="background:var(--green)">INGRESO</button>
             <button onclick="showTab('home')" style="background:#333">ATRÁS</button>
         </div>
+    </div>
+</div>
+
+<div id="alert-modal" class="modal-overlay hidden">
+    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--purple);">
+        <h3 id="alert-title">Aviso</h3>
+        <p id="alert-msg" style="color:var(--gray); font-size:0.9rem; margin-bottom:20px"></p>
+        <div id="alert-buttons" style="display:flex; gap:10px;">
+            </div>
     </div>
 </div>
 
@@ -113,6 +122,25 @@
     const db = firebase.firestore();
 
     let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, clicsAdmin = 0, donutChart = null, areaChart = null;
+
+    // --- SISTEMA DE ALERTAS PERSONALIZADAS (REEMPLAZA ALERT Y CONFIRM) ---
+    function mostrarCustomAlert(titulo, mensaje, esConfirmacion, accion) {
+        document.getElementById('alert-title').innerText = titulo;
+        document.getElementById('alert-msg').innerText = mensaje;
+        const btnCont = document.getElementById('alert-buttons');
+        btnCont.innerHTML = "";
+        
+        if (esConfirmacion) {
+            btnCont.innerHTML = `
+                <button onclick="cerrarModal('alert-modal')" style="background:#333; flex:1">NO</button>
+                <button id="btn-alert-si" style="background:var(--purple); flex:1">SÍ</button>
+            `;
+            document.getElementById('btn-alert-si').onclick = () => { accion(); cerrarModal('alert-modal'); };
+        } else {
+            btnCont.innerHTML = `<button onclick="cerrarModal('alert-modal')" style="background:var(--purple); flex:1">ENTENDIDO</button>`;
+        }
+        document.getElementById('alert-modal').classList.remove('hidden');
+    }
 
     function activarAdmin() { clicsAdmin++; if (clicsAdmin === 7) { const p = prompt("Clave:"); if (p === "2026") document.getElementById('btn-admin-add').classList.remove('hidden'); clicsAdmin = 0; } }
 
@@ -153,7 +181,7 @@
             document.getElementById('pin-msg').innerText = "Ingresá tu PIN:";
             document.getElementById('btn-confirmar-pin').onclick = () => {
                 if(document.getElementById('pin-input').value === pin) { cerrarModal('pin-modal'); selectProfile(nombre); }
-                else alert("PIN Incorrecto");
+                else mostrarCustomAlert("Error", "PIN Incorrecto", false);
             };
         }
     }
@@ -201,12 +229,10 @@
         currentSaldoNeto = net;
     }
 
-    // FUNCIÓN DE ELIMINACIÓN REPARADA
     function solicitarBorrar(id) {
-        if (confirm("¿Seguro que querés eliminar este registro?")) {
-            db.collection("movimientos").doc(id).delete()
-            .catch(e => alert("Error: " + e));
-        }
+        mostrarCustomAlert("¿Eliminar?", "¿Estás seguro de que quieres borrar este movimiento?", true, () => {
+            db.collection("movimientos").doc(id).delete();
+        });
     }
 
     function updateCharts() {
@@ -234,12 +260,21 @@
         showTab('home');
     }
 
-    function cerrarMesAutomatico() {
-        if (currentSaldoNeto <= 0 || !confirm("¿Cerrar mes y ahorrar saldo?")) return;
+    function abrirCierreMes() {
+        if (currentSaldoNeto <= 0) {
+            mostrarCustomAlert("Aviso", "No hay saldo positivo para cerrar el mes.", false);
+            return;
+        }
+        mostrarCustomAlert("Cerrar Mes", "¿Quieres guardar el saldo actual en tus ahorros y limpiar el historial del mes?", true, ejecutarCierreMes);
+    }
+
+    function ejecutarCierreMes() {
         const mesAnio = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
         db.collection("historial_cierres").add({ perfil: currentUser, mes: mesAnio, monto: currentSaldoNeto, fecha: firebase.firestore.FieldValue.serverTimestamp() });
         db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
-        .then(() => transactions.forEach(t => db.collection("movimientos").doc(t.id).delete()));
+        .then(() => {
+            transactions.forEach(t => db.collection("movimientos").doc(t.id).delete());
+        });
     }
 
     function showTab(t) {
