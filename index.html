@@ -32,15 +32,8 @@
             background: #252525; color: white; border: 1px solid #333; box-sizing: border-box;
         }
         .hidden { display: none !important; }
-        .profile-card {
-            background: var(--card); padding: 20px; border-radius: 15px;
-            border-bottom: 4px solid var(--purple); cursor: pointer; transition: 0.3s;
-        }
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center;
-            z-index: 10000; backdrop-filter: blur(8px);
-        }
+        .profile-card { background: var(--card); padding: 20px; border-radius: 15px; border-bottom: 4px solid var(--purple); cursor: pointer; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(8px); }
         .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; }
         .nav-menu button { background: #333; flex: 1; padding: 10px; font-size: 0.8rem; margin: 0; }
         .item-list { background: var(--card); padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
@@ -50,13 +43,10 @@
 
 <div class="container">
     <div id="profile-selection">
-        <h1 id="main-title" onclick="activarAdmin()" style="text-align:center; margin-bottom:5px; cursor:default">Finansas IB</h1>
+        <h1 id="main-title" onclick="activarAdmin()" style="text-align:center; margin-bottom:5px;">Finansas IB</h1>
         <p style="text-align:center; color:var(--gray); margin-bottom:30px">¿Quién está usando la app?</p>
         <div id="profiles-grid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px"></div>
-        
-        <button id="btn-admin-add" onclick="abrirCrearPerfil()" class="hidden" style="background:transparent; border:2px dashed var(--purple); color:var(--purple); margin-top:30px">
-            + AGREGAR PERFIL (ADMIN)
-        </button>
+        <button id="btn-admin-add" onclick="abrirCrearPerfil()" class="hidden" style="background:transparent; border:2px dashed var(--purple); color:var(--purple); margin-top:30px">+ AGREGAR PERFIL</button>
     </div>
 
     <div id="main-dashboard" class="hidden">
@@ -65,66 +55,82 @@
             <button onclick="location.reload()" style="width:auto; background:#333; padding:5px 12px; margin:0; font-size:0.7rem">Salir</button>
         </div>
         <div class="nav-menu">
-            <button onclick="showTab('home')">HOME</button>
-            <button onclick="showTab('stats')">STATS</button>
+            <button onclick="showTab('home')">INICIO</button>
+            <button onclick="showTab('ahorros')">AHORROS</button>
         </div>
+
         <div id="tab-home">
             <div class="card">
                 <small style="color:var(--gray)">Saldo del Mes</small>
                 <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.3rem;">$0</h1>
                 <h3 id="total-spent" style="color:var(--red); margin:0; font-size: 1.1rem; font-weight: normal; opacity: 0.9;">-$0</h3>
-                <hr style="border:0; border-top:1px solid #333; margin:15px 0">
-                <small style="color:var(--gray)">Ahorro Total</small>
-                <h2 id="total-saved-big" style="color:var(--purple); margin:5px 0">$0</h2>
             </div>
             <button class="btn-add" onclick="showTab('add')">+ NUEVO MOVIMIENTO</button>
-            <button class="btn-save" onclick="cerrarMesAutomatico()">🔒 CERRAR MES</button>
+            <button class="btn-save" onclick="prepararCierreMes()">🔒 CERRAR MES</button>
             <div id="history-list" style="margin-top:20px"></div>
         </div>
+
+        <div id="tab-ahorros" class="hidden">
+            <div class="card" style="border-left: 6px solid var(--green);">
+                <small style="color:var(--gray)">Ahorro Total Acumulado</small>
+                <h1 id="total-saved-big" style="color:var(--green); margin:10px 0">$0</h1>
+            </div>
+            <h3 style="margin-top:20px">Historial de Cierres</h3>
+            <div id="meses-list"></div>
+            <button onclick="showTab('home')" style="background:#333">VOLVER</button>
+        </div>
+
         <div id="tab-add" class="hidden">
             <h2>Nuevo Registro</h2>
             <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
-            <input type="text" id="desc" placeholder="Descripción">
+            <input type="text" id="desc" placeholder="Descripción (ej: Pago de cliente)">
             <select id="cat">
-                <option value="Comida">Comida</option><option value="Servicios">Servicios</option>
-                <option value="Nafta">Nafta</option><option value="Varios">Varios</option>
+                <option value="Sueldo">Sueldo / Pago</option>
+                <option value="Comida">Comida</option>
+                <option value="Servicios">Servicios</option>
+                <option value="Nafta">Nafta</option>
+                <option value="Varios">Varios</option>
             </select>
             <div style="display:flex; gap:10px">
                 <button onclick="addEntry('gasto')" style="background:var(--red)">GASTO</button>
                 <button onclick="addEntry('ingreso')" style="background:var(--green)">INGRESO</button>
             </div>
-            <button onclick="showTab('home')" style="background:#444">VOLVER</button>
+            <button onclick="showTab('home')" style="background:#444">CANCELAR</button>
         </div>
-        <div id="tab-stats" class="hidden"><canvas id="myChart"></canvas></div>
     </div>
 </div>
 
 <div id="pin-modal" class="modal-overlay hidden">
-    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--purple);">
-        <h3 style="margin:0">Seguridad</h3>
-        <p id="pin-msg" style="color:var(--gray); font-size:0.8rem; margin-bottom:15px"></p>
+    <div class="card" style="width:85%; max-width:320px;">
+        <h3>Seguridad</h3>
+        <p id="pin-msg" style="color:var(--gray); font-size:0.8rem;"></p>
         <input type="password" id="pin-input" placeholder="****" inputmode="numeric" maxlength="4" style="text-align:center; font-size:2rem; letter-spacing:15px;">
-        <div style="display:flex; gap:10px; margin-top:10px">
-            <button id="btn-confirmar-pin" class="btn-add">ENTRAR</button>
-            <button onclick="cerrarModal('pin-modal')" style="background:#444">VOLVER</button>
-        </div>
+        <button id="btn-confirmar-pin" class="btn-add">ENTRAR</button>
+        <button onclick="cerrarModal('pin-modal')" style="background:#444">VOLVER</button>
     </div>
 </div>
 
 <div id="nuevo-perfil-modal" class="modal-overlay hidden">
     <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--green);">
-        <h3 style="margin:0">Nuevo Perfil</h3>
-        <p style="color:var(--gray); font-size:0.8rem; margin-bottom:15px">Configurá el acceso</p>
+        <h3>Nuevo Perfil</h3>
         <input type="text" id="nuevo-nombre-input" placeholder="Nombre">
         <input type="password" id="nuevo-pin-input" placeholder="PIN (4 números)" inputmode="numeric" maxlength="4" style="text-align:center; letter-spacing:5px;">
-        <div style="display:flex; gap:10px; margin-top:10px">
-            <button onclick="guardarNuevoPerfil()" class="btn-add">CREAR</button>
-            <button onclick="cerrarModal('nuevo-perfil-modal')" style="background:#444">CANCELAR</button>
+        <button onclick="guardarNuevoPerfil()" class="btn-add">CREAR</button>
+        <button onclick="cerrarModal('nuevo-perfil-modal')" style="background:#444">CANCELAR</button>
+    </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay hidden">
+    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--red);">
+        <h3>¿Borrar registro?</h3>
+        <p style="color:var(--gray)">Esta acción no se puede deshacer.</p>
+        <div style="display:flex; gap:10px; margin-top:15px">
+            <button id="btn-confirmar-borrar" style="background:var(--red)">BORRAR</button>
+            <button onclick="cerrarModal('confirm-modal')" style="background:#444">CANCELAR</button>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBCtAu5W-S48pICmS9H0k7mKLiJpNKHSoQ",
@@ -137,27 +143,21 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0;
-    let clicsAdmin = 0;
+    let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, clicsAdmin = 0;
 
-    // --- TRUCO DE ADMINISTRADOR ---
     function activarAdmin() {
         clicsAdmin++;
-        if (clicsAdmin === 7) { // Tocá 7 veces el título "Finansas IB"
+        if (clicsAdmin === 7) {
             const pass = prompt("Clave Maestra:");
-            if (pass === "2026") { // CAMBIÁ ESTA CLAVE SI QUERÉS
-                document.getElementById('btn-admin-add').classList.remove('hidden');
-                alert("🔓 Modo Administrador: Botón activado.");
-            }
+            if (pass === "2026") { document.getElementById('btn-admin-add').classList.remove('hidden'); }
             clicsAdmin = 0;
         }
     }
 
     function inicializarApp() {
-        document.getElementById('pin-modal').classList.add('hidden');
-        document.getElementById('nuevo-perfil-modal').classList.add('hidden');
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
         document.getElementById('main-dashboard').classList.add('hidden');
-        document.getElementById('btn-admin-add').classList.add('hidden'); // Siempre empieza oculto
+        document.getElementById('profile-selection').classList.remove('hidden');
         cargarPerfiles();
     }
 
@@ -166,11 +166,7 @@
             const grid = document.getElementById('profiles-grid');
             grid.innerHTML = "";
             snap.forEach(doc => {
-                grid.innerHTML += `
-                    <div onclick="intentarAcceso('${doc.id}')" class="profile-card">
-                        <div style="font-size:2.5rem; margin-bottom:10px">👤</div>
-                        <strong>${doc.id}</strong>
-                    </div>`;
+                grid.innerHTML += `<div onclick="intentarAcceso('${doc.id}')" class="profile-card"><div style="font-size:2.5rem; margin-bottom:10px">👤</div><strong>${doc.id}</strong></div>`;
             });
         });
     }
@@ -179,31 +175,14 @@
         const doc = await db.collection("config_perfiles").doc(nombre).get();
         const pinCorrecto = doc.data().pin;
         document.getElementById('pin-modal').classList.remove('hidden');
-        document.getElementById('pin-msg').innerText = "Ingresá la clave de " + nombre;
+        document.getElementById('pin-msg').innerText = "Clave para " + nombre;
         document.getElementById('pin-input').value = "";
         document.getElementById('pin-input').focus();
         document.getElementById('btn-confirmar-pin').onclick = () => {
-            if(document.getElementById('pin-input').value === pinCorrecto) {
-                cerrarModal('pin-modal'); selectProfile(nombre);
-            } else { alert("❌ PIN Incorrecto"); }
+            if(document.getElementById('pin-input').value === pinCorrecto) { cerrarModal('pin-modal'); selectProfile(nombre); }
+            else { alert("❌ PIN Incorrecto"); }
         };
     }
-
-    function abrirCrearPerfil() {
-        document.getElementById('nuevo-perfil-modal').classList.remove('hidden');
-    }
-
-    async function guardarNuevoPerfil() {
-        const n = document.getElementById('nuevo-nombre-input').value.trim();
-        const p = document.getElementById('nuevo-pin-input').value.trim();
-        if(n && p.length >= 4) {
-            await db.collection("config_perfiles").doc(n).set({ pin: p });
-            cerrarModal('nuevo-perfil-modal');
-            document.getElementById('btn-admin-add').classList.add('hidden'); // Se oculta tras usarlo
-        }
-    }
-
-    function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
 
     function selectProfile(name) {
         currentUser = name;
@@ -222,6 +201,14 @@
             totalAhorrado = doc.exists ? doc.data().total : 0;
             document.getElementById('total-saved-big').innerText = "$" + totalAhorrado.toLocaleString();
         });
+        db.collection("historial_cierres").where("perfil", "==", currentUser).orderBy("fecha", "desc").onSnapshot(snap => {
+            const list = document.getElementById('meses-list');
+            list.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                list.innerHTML += `<div class="item-list"><span>${d.mes}</span><strong>$${d.monto.toLocaleString()}</strong></div>`;
+            });
+        });
     }
 
     function renderUI() {
@@ -234,7 +221,7 @@
                     <div><strong>${t.desc}</strong><br><small>${t.cat}</small></div>
                     <div style="text-align:right">
                         <div style="font-weight:bold; color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div>
-                        <button onclick="borrarDato('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; border:none; padding:0">Borrar</button>
+                        <button onclick="solicitarBorrar('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; padding:0">Borrar</button>
                     </div>
                 </div>`;
         });
@@ -255,19 +242,36 @@
         showTab('home');
     }
 
-    function showTab(t) {
-        ['home', 'stats', 'add'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
-        document.getElementById('tab-'+t).classList.remove('hidden');
+    // BORRAR SIN CARTEL DE URL
+    function solicitarBorrar(id) {
+        document.getElementById('confirm-modal').classList.remove('hidden');
+        document.getElementById('btn-confirmar-borrar').onclick = () => {
+            db.collection("movimientos").doc(id).delete();
+            cerrarModal('confirm-modal');
+        };
     }
-
-    function borrarDato(id) { if(confirm("¿Borrar?")) db.collection("movimientos").doc(id).delete(); }
 
     function cerrarMesAutomatico() {
         if (currentSaldoNeto <= 0) return alert("Nada que ahorrar.");
-        if (confirm(`¿Ahorrar $${currentSaldoNeto.toLocaleString()}?`)) {
-            db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
-            .then(() => transactions.forEach(t => db.collection("movimientos").doc(t.id).delete()));
-        }
+        const mesAnio = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+        db.collection("historial_cierres").add({
+            perfil: currentUser, mes: mesAnio, monto: currentSaldoNeto, fecha: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
+        .then(() => transactions.forEach(t => db.collection("movimientos").doc(t.id).delete()));
+    }
+
+    function showTab(t) {
+        ['home', 'ahorros', 'add'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
+        document.getElementById('tab-'+t).classList.remove('hidden');
+    }
+
+    function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function abrirCrearPerfil() { document.getElementById('nuevo-perfil-modal').classList.remove('hidden'); }
+    async function guardarNuevoPerfil() {
+        const n = document.getElementById('nuevo-nombre-input').value.trim();
+        const p = document.getElementById('nuevo-pin-input').value.trim();
+        if(n && p.length >= 4) { await db.collection("config_perfiles").doc(n).set({ pin: p }); cerrarModal('nuevo-perfil-modal'); }
     }
 
     inicializarApp();
