@@ -14,6 +14,8 @@
         }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 450px; }
+        
+        /* PERFILES */
         .section-title { font-size: 0.8rem; color: var(--gray); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px 10px; text-align: left; width: 100%; }
         .main-profiles { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
         .guest-profiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -25,16 +27,23 @@
         .profile-card.guest .name { font-size: 0.8rem; color: #bbb; }
         .avatar { border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .name { font-weight: 600; }
-        .card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px; border-left: 6px solid var(--purple); }
-        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; }
+
+        /* DASHBOARD */
+        .card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 20px; border-left: 6px solid var(--purple); text-align: center; }
+        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
         .btn-add { background: var(--green); }
         input, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; background: #222; color: white; border: 1px solid #333; box-sizing: border-box; }
         .hidden { display: none !important; }
+        
+        /* MODALES */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(10px); }
+        
+        /* NAVEGACIÓN Y LISTA */
         .nav-menu { display: flex; gap: 5px; margin-bottom: 20px; }
         .nav-menu button { background: #1a1a1a; flex: 1; padding: 10px; font-size: 0.7rem; color: var(--gray); margin: 0; }
         .nav-menu button.active { background: var(--purple); color: white; }
-        .item-list { background: var(--card); padding: 12px; border-radius: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        .item-list { background: var(--card); padding: 12px; border-radius: 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; text-align: left; }
     </style>
 </head>
 <body>
@@ -56,27 +65,31 @@
         </div>
         <div class="nav-menu">
             <button id="nav-home" onclick="showTab('home')" class="active">INICIO</button>
-            <button id="nav-stats" onclick="showTab('stats')">STATS</button>
+            <button id="nav-stats" onclick="showTab('stats')">ESTADÍSTICAS</button>
             <button id="nav-ahorros" onclick="showTab('ahorros')">AHORROS</button>
         </div>
+
         <div id="tab-home">
             <div class="card">
-                <small style="color:var(--gray)">SALDO</small>
-                <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.5rem;">$0</h1>
+                <small style="color:var(--gray)">SALDO ACTUAL</small>
+                <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.8rem;">$0</h1>
+                <h3 id="total-spent-display" style="color:var(--red); margin:0; font-size: 1.1rem; font-weight: normal; opacity: 0.8;">-$0 gastados este mes</h3>
             </div>
-            <button class="btn-add" onclick="showTab('add')">+ MOVIMIENTO</button>
-            <button onclick="abrirCierreMes()" style="background:var(--purple); font-size: 0.8rem;">🔒 CIERRE DE MES</button>
+            <button class="btn-add" onclick="showTab('add')">+ CARGAR MOVIMIENTO</button>
+            <button onclick="abrirCierreMes()" style="background:var(--purple); font-size: 0.8rem;">🔒 CIERRE DE MES & AHORRAR</button>
             <div id="history-list" style="margin-top:15px"></div>
         </div>
+
         <div id="tab-stats" class="hidden"><canvas id="donutChart"></canvas><br><canvas id="areaChart"></canvas></div>
         <div id="tab-ahorros" class="hidden"><div class="card"><small>TOTAL AHORRADO</small><h1 id="total-saved-big">$0</h1></div><div id="meses-list"></div></div>
+        
         <div id="tab-add" class="hidden">
             <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
-            <input type="text" id="desc" placeholder="Descripción">
-            <select id="cat"><option value="Sueldo">Sueldo</option><option value="Comida">Comida</option><option value="Servicios">Servicios</option><option value="Nafta">Nafta</option><option value="Varios">Varios</option></select>
-            <button onclick="addEntry('gasto')" style="background:var(--red)">GASTO</button>
-            <button onclick="addEntry('ingreso')" style="background:var(--green)">INGRESO</button>
-            <button onclick="showTab('home')" style="background:#333">ATRÁS</button>
+            <input type="text" id="desc" placeholder="¿Qué compraste o cobraste?">
+            <select id="cat"><option value="Sueldo">Sueldo / Pago</option><option value="Comida">Comida</option><option value="Servicios">Servicios</option><option value="Nafta">Nafta</option><option value="Varios">Varios</option></select>
+            <button onclick="addEntry('gasto')" style="background:var(--red)">ES GASTO</button>
+            <button onclick="addEntry('ingreso')" style="background:var(--green)">ES INGRESO</button>
+            <button onclick="showTab('home')" style="background:#333">CANCELAR</button>
         </div>
     </div>
 </div>
@@ -85,8 +98,7 @@
     <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--purple);">
         <h3 id="alert-title">Aviso</h3>
         <p id="alert-msg" style="color:var(--gray); font-size:0.9rem; margin-bottom:20px"></p>
-        <div id="alert-buttons" style="display:flex; gap:10px;">
-            </div>
+        <div id="alert-buttons" style="display:flex; gap:10px;"></div>
     </div>
 </div>
 
@@ -123,21 +135,16 @@
 
     let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, clicsAdmin = 0, donutChart = null, areaChart = null;
 
-    // --- SISTEMA DE ALERTAS PERSONALIZADAS (REEMPLAZA ALERT Y CONFIRM) ---
     function mostrarCustomAlert(titulo, mensaje, esConfirmacion, accion) {
         document.getElementById('alert-title').innerText = titulo;
         document.getElementById('alert-msg').innerText = mensaje;
         const btnCont = document.getElementById('alert-buttons');
         btnCont.innerHTML = "";
-        
         if (esConfirmacion) {
-            btnCont.innerHTML = `
-                <button onclick="cerrarModal('alert-modal')" style="background:#333; flex:1">NO</button>
-                <button id="btn-alert-si" style="background:var(--purple); flex:1">SÍ</button>
-            `;
+            btnCont.innerHTML = `<button onclick="cerrarModal('alert-modal')" style="background:#333; flex:1">NO</button><button id="btn-alert-si" style="background:var(--purple); flex:1">SÍ</button>`;
             document.getElementById('btn-alert-si').onclick = () => { accion(); cerrarModal('alert-modal'); };
         } else {
-            btnCont.innerHTML = `<button onclick="cerrarModal('alert-modal')" style="background:var(--purple); flex:1">ENTENDIDO</button>`;
+            btnCont.innerHTML = `<button onclick="cerrarModal('alert-modal')" style="background:var(--purple); flex:1">OK</button>`;
         }
         document.getElementById('alert-modal').classList.remove('hidden');
     }
@@ -171,7 +178,7 @@
         document.getElementById('pin-input').value = "";
         if (!pin || pin === "") {
             document.getElementById('modal-title').innerText = "Crear PIN";
-            document.getElementById('pin-msg').innerText = "Perfil nuevo. Elegí 4 números:";
+            document.getElementById('pin-msg').innerText = "Elegí 4 números para tu perfil:";
             document.getElementById('btn-confirmar-pin').onclick = async () => {
                 const np = document.getElementById('pin-input').value;
                 if (np.length === 4) { await db.collection("config_perfiles").doc(nombre).update({ pin: np }); cerrarModal('pin-modal'); selectProfile(nombre); }
@@ -188,7 +195,7 @@
 
     function selectProfile(name) {
         currentUser = name;
-        document.getElementById('user-display').innerText = "Usuario: " + name;
+        document.getElementById('user-display').innerText = "Sesión: " + name;
         document.getElementById('profile-selection').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         iniciarEscuchas();
@@ -215,24 +222,46 @@
 
     function renderUI() {
         const list = document.getElementById('history-list'); list.innerHTML = "";
-        let net = 0;
+        let net = 0, spent = 0;
         transactions.forEach(t => {
-            if(t.type === 'ingreso') net += t.amount; else net -= t.amount;
+            if(t.type === 'ingreso') net += t.amount; else { net -= t.amount; spent += t.amount; }
             let timeStr = "";
             if(t.timestamp) {
                 const d = t.timestamp.toDate();
                 timeStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} - ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}hs`;
             }
-            list.innerHTML += `<div class="item-list" style="border-left: 4px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}"><div><strong>${t.desc}</strong><br><small style="color:#666; font-size:0.7rem">${timeStr}</small></div><div style="text-align:right"><div style="color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div><button onclick="solicitarBorrar('${t.id}')" style="background:rgba(231, 76, 60, 0.1); color:var(--red); font-size:0.6rem; padding:4px 8px; width:auto; margin:5px 0 0 0; border-radius:5px">Eliminar</button></div></div>`;
+            list.innerHTML += `<div class="item-list" style="border-left: 4px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}"><div><strong>${t.desc}</strong><br><small style="color:#666; font-size:0.7rem">${timeStr}</small></div><div style="text-align:right"><div style="color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">${t.type==='ingreso'?'+':'-'}$${t.amount.toLocaleString()}</div><button onclick="solicitarBorrar('${t.id}')" style="background:rgba(231, 76, 60, 0.1); color:var(--red); font-size:0.6rem; padding:4px 8px; width:auto; margin:5px 0 0 0; border-radius:5px">Eliminar</button></div></div>`;
         });
         document.getElementById('net-balance').innerText = "$" + net.toLocaleString();
+        document.getElementById('total-spent-display').innerText = `-$${spent.toLocaleString()} gastados este mes`;
         currentSaldoNeto = net;
     }
 
     function solicitarBorrar(id) {
-        mostrarCustomAlert("¿Eliminar?", "¿Estás seguro de que quieres borrar este movimiento?", true, () => {
+        mostrarCustomAlert("¿Eliminar?", "¿Seguro querés borrar este movimiento?", true, () => {
             db.collection("movimientos").doc(id).delete();
         });
+    }
+
+    function addEntry(type) {
+        const amount = parseFloat(document.getElementById('amount').value);
+        const desc = document.getElementById('desc').value;
+        if (!amount || !desc) return;
+        db.collection("movimientos").add({ amount, desc, cat: document.getElementById('cat').value, type, perfil: currentUser, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+        document.getElementById('amount').value = ""; document.getElementById('desc').value = "";
+        showTab('home');
+    }
+
+    function abrirCierreMes() {
+        if (currentSaldoNeto <= 0) { mostrarCustomAlert("Aviso", "No hay saldo positivo para ahorrar.", false); return; }
+        mostrarCustomAlert("Cerrar Mes", "¿Querés guardar el saldo en tus ahorros y limpiar el mes?", true, ejecutarCierreMes);
+    }
+
+    function ejecutarCierreMes() {
+        const mesAnio = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+        db.collection("historial_cierres").add({ perfil: currentUser, mes: mesAnio, monto: currentSaldoNeto, fecha: firebase.firestore.FieldValue.serverTimestamp() });
+        db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
+        .then(() => { transactions.forEach(t => db.collection("movimientos").doc(t.id).delete()); });
     }
 
     function updateCharts() {
@@ -251,38 +280,11 @@
         areaChart = new Chart(ctxA, { type: 'line', data: { labels: labels, datasets: [{ label: 'Saldo', data: data, fill: true, backgroundColor: 'rgba(52, 152, 219, 0.2)', borderColor: '#3498db', tension: 0.3 }] }, options: { plugins: { legend: { display: false } } } });
     }
 
-    function addEntry(type) {
-        const amount = parseFloat(document.getElementById('amount').value);
-        const desc = document.getElementById('desc').value;
-        if (!amount || !desc) return;
-        db.collection("movimientos").add({ amount, desc, cat: document.getElementById('cat').value, type, perfil: currentUser, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-        document.getElementById('amount').value = ""; document.getElementById('desc').value = "";
-        showTab('home');
-    }
-
-    function abrirCierreMes() {
-        if (currentSaldoNeto <= 0) {
-            mostrarCustomAlert("Aviso", "No hay saldo positivo para cerrar el mes.", false);
-            return;
-        }
-        mostrarCustomAlert("Cerrar Mes", "¿Quieres guardar el saldo actual en tus ahorros y limpiar el historial del mes?", true, ejecutarCierreMes);
-    }
-
-    function ejecutarCierreMes() {
-        const mesAnio = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
-        db.collection("historial_cierres").add({ perfil: currentUser, mes: mesAnio, monto: currentSaldoNeto, fecha: firebase.firestore.FieldValue.serverTimestamp() });
-        db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
-        .then(() => {
-            transactions.forEach(t => db.collection("movimientos").doc(t.id).delete());
-        });
-    }
-
     function showTab(t) {
         ['home', 'stats', 'ahorros', 'add'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
         document.getElementById('tab-'+t).classList.remove('hidden');
         document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
-        const btn = document.getElementById('nav-'+(t==='add'?'home':t));
-        if(btn) btn.classList.add('active');
+        const btn = document.getElementById('nav-'+(t==='add'?'home':t)); if(btn) btn.classList.add('active');
         if(t === 'stats') setTimeout(updateCharts, 100);
     }
 
