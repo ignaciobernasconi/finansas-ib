@@ -10,8 +10,7 @@
     <style>
         :root {
             --bg: #121212; --card: #1e1e1e; --purple: #8e44ad; 
-            --green: #2ecc71; --red: #e74c3c; --yellow: #f1c40f; --blue: #3498db; --text: #ffffff; --gray: #aaa;
-            --purple-shadow: rgba(142, 68, 173, 0.4);
+            --green: #2ecc71; --red: #e74c3c; --text: #ffffff; --gray: #aaa;
         }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 450px; }
@@ -25,7 +24,7 @@
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.97); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(10px); }
         .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; width: 100%; }
         .nav-menu button { background: #252525; flex: 1; padding: 12px; font-size: 0.75rem; margin: 0; border-radius: 8px; border: 1px solid #333; color: var(--gray); }
-        .nav-menu button.active { background: var(--purple); color: white; border-color: var(--purple); }
+        .nav-menu button.active { background: var(--purple); color: white; }
         .item-list { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .time-badge { font-size: 0.7rem; color: var(--gray); display: block; margin-top: 3px; }
     </style>
@@ -37,7 +36,7 @@
         <h1 onclick="activarAdmin()" style="text-align:center; margin-bottom:5px;">Finansas IB</h1>
         <p style="text-align:center; color:var(--gray); margin-bottom:30px">¿Quién está usando la app?</p>
         <div id="profiles-grid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px"></div>
-        <button id="btn-admin-add" onclick="abrirCrearPerfil()" class="hidden" style="background:transparent; border:2px dashed var(--purple); color:var(--purple);">+ AGREGAR PERFIL</button>
+        <button id="btn-admin-add" onclick="abrirCrearPerfil()" class="hidden" style="background:transparent; border:2px dashed var(--purple); color:var(--purple);">+ CREAR ESPACIO PARA PERFIL</button>
     </div>
 
     <div id="main-dashboard" class="hidden">
@@ -45,13 +44,11 @@
             <h2 id="user-display" style="margin:0; font-size: 1rem;"></h2>
             <button onclick="location.reload()" style="width:auto; background:#252525; padding:5px 12px; margin:0; font-size:0.7rem">Salir</button>
         </div>
-        
         <div class="nav-menu">
             <button id="nav-home" onclick="showTab('home')" class="active">INICIO</button>
             <button id="nav-stats" onclick="showTab('stats')">ESTADÍSTICAS</button>
             <button id="nav-ahorros" onclick="showTab('ahorros')">AHORROS</button>
         </div>
-
         <div id="tab-home">
             <div class="card">
                 <small style="color:var(--gray)">Saldo del Mes</small>
@@ -62,68 +59,43 @@
             <button class="btn-save" onclick="cerrarMesAutomatico()">🔒 CERRAR MES & AHORRAR</button>
             <div id="history-list" style="margin-top:20px"></div>
         </div>
-
-        <div id="tab-stats" class="hidden">
-            <div class="card" style="padding: 10px;"><canvas id="donutChart"></canvas></div>
-            <div class="card" style="padding: 10px; border-left-color: var(--blue);"><canvas id="areaChart"></canvas></div>
-            <button onclick="showTab('home')" style="background:#333">VOLVER</button>
-        </div>
-
-        <div id="tab-ahorros" class="hidden">
-            <div class="card" style="border-left: 6px solid var(--green);">
-                <small style="color:var(--gray)">Ahorro Total Acumulado</small>
-                <h1 id="total-saved-big" style="color:var(--green); margin:10px 0">$0</h1>
-            </div>
-            <div id="meses-list"></div>
-            <button onclick="showTab('home')" style="background:#333">VOLVER</button>
-        </div>
-
+        <div id="tab-stats" class="hidden"><div class="card"><canvas id="donutChart"></canvas></div><div class="card"><canvas id="areaChart"></canvas></div></div>
+        <div id="tab-ahorros" class="hidden"><div class="card"><small>Ahorro Total</small><h1 id="total-saved-big">$0</h1></div><div id="meses-list"></div></div>
         <div id="tab-add" class="hidden">
-            <h2>Nuevo Registro</h2>
             <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
             <input type="text" id="desc" placeholder="Descripción">
-            <select id="cat">
-                <option value="Sueldo">Sueldo / Pago</option>
-                <option value="Comida">Comida</option>
-                <option value="Servicios">Servicios</option>
-                <option value="Nafta">Nafta</option>
-                <option value="Varios">Varios</option>
-            </select>
-            <div style="display:flex; gap:10px">
-                <button onclick="addEntry('gasto')" style="background:var(--red); flex:1">GASTO</button>
-                <button onclick="addEntry('ingreso')" style="background:var(--green); flex:1">INGRESO</button>
-            </div>
-            <button onclick="showTab('home')" style="background:#444">CANCELAR</button>
-        </div>
-    </div>
-</div>
-
-<div id="confirm-modal" class="modal-overlay hidden">
-    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--red);">
-        <h3>¿Borrar registro?</h3>
-        <div style="display:flex; gap:10px; margin-top:15px">
-            <button id="btn-confirmar-borrar" style="background:var(--red); flex:1">BORRAR</button>
-            <button onclick="cerrarModal('confirm-modal')" style="background:#444; flex:1">NO</button>
+            <select id="cat"><option value="Sueldo">Sueldo/Pago</option><option value="Comida">Comida</option><option value="Servicios">Servicios</option><option value="Nafta">Nafta</option><option value="Varios">Varios</option></select>
+            <button onclick="addEntry('gasto')" style="background:var(--red)">GASTO</button><button onclick="addEntry('ingreso')" style="background:var(--green)">INGRESO</button>
+            <button onclick="showTab('home')" style="background:#444">VOLVER</button>
         </div>
     </div>
 </div>
 
 <div id="pin-modal" class="modal-overlay hidden">
     <div class="card" style="width:85%; max-width:320px;">
-        <h3>Seguridad</h3>
+        <h3 id="modal-title">Seguridad</h3>
+        <p id="pin-msg" style="color:var(--gray); font-size:0.8rem;"></p>
         <input type="password" id="pin-input" placeholder="****" inputmode="numeric" maxlength="4" style="text-align:center; font-size:2rem; letter-spacing:15px;">
-        <button id="btn-confirmar-pin" class="btn-add">ENTRAR</button>
-        <button onclick="cerrarModal('pin-modal')" style="background:#444">VOLVER</button>
+        <button id="btn-confirmar-pin" class="btn-add">CONFIRMAR</button>
+        <button id="btn-cerrar-pin" onclick="cerrarModal('pin-modal')" style="background:#444">CANCELAR</button>
     </div>
 </div>
 
 <div id="nuevo-perfil-modal" class="modal-overlay hidden">
     <div class="card" style="width:85%; max-width:320px;">
         <h3>Nuevo Perfil</h3>
-        <input type="text" id="nuevo-nombre-input" placeholder="Nombre">
-        <input type="password" id="nuevo-pin-input" placeholder="PIN" inputmode="numeric" maxlength="4" style="text-align:center;">
-        <button onclick="guardarNuevoPerfil()" class="btn-add">CREAR</button>
+        <p style="color:var(--gray); font-size:0.8rem;">Solo poné el nombre. El usuario creará su PIN al entrar.</p>
+        <input type="text" id="nuevo-nombre-input" placeholder="Nombre (ej: Johan)">
+        <button onclick="guardarNuevoPerfil()" class="btn-add">CREAR ESPACIO</button>
         <button onclick="cerrarModal('nuevo-perfil-modal')" style="background:#444">CANCELAR</button>
+    </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay hidden">
+    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--red);">
+        <h3>¿Borrar registro?</h3>
+        <button id="btn-confirmar-borrar" style="background:var(--red)">BORRAR</button>
+        <button onclick="cerrarModal('confirm-modal')" style="background:#444">NO</button>
     </div>
 </div>
 
@@ -144,7 +116,7 @@
     function activarAdmin() {
         clicsAdmin++;
         if (clicsAdmin === 7) {
-            const pass = prompt("Clave:");
+            const pass = prompt("Clave Maestra:");
             if (pass === "2026") { document.getElementById('btn-admin-add').classList.remove('hidden'); }
             clicsAdmin = 0;
         }
@@ -166,13 +138,32 @@
 
     async function intentarAcceso(nombre) {
         const doc = await db.collection("config_perfiles").doc(nombre).get();
-        const pinCorrecto = doc.data().pin;
+        const pinRegistrado = doc.data().pin;
+
         document.getElementById('pin-modal').classList.remove('hidden');
         document.getElementById('pin-input').value = "";
-        document.getElementById('btn-confirmar-pin').onclick = () => {
-            if(document.getElementById('pin-input').value === pinCorrecto) { cerrarModal('pin-modal'); selectProfile(nombre); }
-            else { alert("❌ PIN Incorrecto"); }
-        };
+        
+        if (!pinRegistrado || pinRegistrado === "") {
+            // FLUJO: CREACIÓN DE PIN (PRIMERA VEZ)
+            document.getElementById('modal-title').innerText = "Crear PIN";
+            document.getElementById('pin-msg').innerText = "Este perfil es nuevo. Elegí un PIN de 4 números para proteger tus datos:";
+            document.getElementById('btn-confirmar-pin').onclick = async () => {
+                const nuevoPin = document.getElementById('pin-input').value;
+                if (nuevoPin.length === 4) {
+                    await db.collection("config_perfiles").doc(nombre).update({ pin: nuevoPin });
+                    cerrarModal('pin-modal');
+                    selectProfile(nombre);
+                } else { alert("El PIN debe ser de 4 números"); }
+            };
+        } else {
+            // FLUJO: ACCESO NORMAL
+            document.getElementById('modal-title').innerText = "Seguridad";
+            document.getElementById('pin-msg').innerText = "Ingresá tu PIN para entrar a " + nombre;
+            document.getElementById('btn-confirmar-pin').onclick = () => {
+                if(document.getElementById('pin-input').value === pinRegistrado) { cerrarModal('pin-modal'); selectProfile(nombre); }
+                else { alert("❌ PIN Incorrecto"); }
+            };
+        }
     }
 
     function selectProfile(name) {
@@ -207,29 +198,12 @@
         let net = 0, spent = 0;
         transactions.forEach(t => {
             if(t.type === 'ingreso') net += t.amount; else { net -= t.amount; spent += t.amount; }
-            
-            // --- FORMATEO DE FECHA Y HORA ---
-            let timeStr = "Pendiente...";
+            let timeStr = "Poco...";
             if(t.timestamp) {
                 const date = t.timestamp.toDate();
-                const d = date.getDate().toString().padStart(2, '0');
-                const m = (date.getMonth() + 1).toString().padStart(2, '0');
-                const h = date.getHours().toString().padStart(2, '0');
-                const min = date.getMinutes().toString().padStart(2, '0');
-                timeStr = `${d}/${m} - ${h}:${min}hs`;
+                timeStr = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')} - ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}hs`;
             }
-
-            list.innerHTML += `
-                <div class="item-list" style="border-left: 5px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}">
-                    <div>
-                        <strong>${t.desc}</strong>
-                        <span class="time-badge">${timeStr} | ${t.cat}</span>
-                    </div>
-                    <div style="text-align:right">
-                        <div style="font-weight:bold; color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div>
-                        <button onclick="solicitarBorrar('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; padding:0">Borrar</button>
-                    </div>
-                </div>`;
+            list.innerHTML += `<div class="item-list" style="border-left: 5px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}"><div><strong>${t.desc}</strong><span class="time-badge">${timeStr} | ${t.cat}</span></div><div style="text-align:right"><div style="font-weight:bold; color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div><button onclick="solicitarBorrar('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; padding:0">Borrar</button></div></div>`;
         });
         document.getElementById('net-balance').innerText = "$" + net.toLocaleString();
         document.getElementById('total-spent').innerText = "-$" + spent.toLocaleString() + " gastados";
@@ -240,48 +214,28 @@
         const gastos = transactions.filter(t => t.type === 'gasto');
         const cats = [...new Set(gastos.map(g => g.cat))];
         const donutData = cats.map(c => gastos.filter(g => g.cat === c).reduce((sum, current) => sum + current.amount, 0));
-        
-        const ctxDonut = document.getElementById('donutChart').getContext('2d');
+        const ctxD = document.getElementById('donutChart').getContext('2d');
         if(donutChart) donutChart.destroy();
-        donutChart = new Chart(ctxDonut, {
-            type: 'doughnut',
-            data: { labels: cats, datasets: [{ data: donutData, backgroundColor: ['#8e44ad', '#2ecc71', '#e74c3c', '#f1c40f', '#3498db'] }] },
-            options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#aaa' } } } }
-        });
-
+        donutChart = new Chart(ctxD, { type: 'doughnut', data: { labels: cats, datasets: [{ data: donutData, backgroundColor: ['#8e44ad', '#2ecc71', '#e74c3c', '#f1c40f', '#3498db'] }] }, options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#aaa' } } } } });
+        
         const movs = [...transactions].sort((a,b) => (a.timestamp?a.timestamp.toDate():0) - (b.timestamp?b.timestamp.toDate():0));
         let s = 0; const labels = []; const data = [];
-        movs.forEach(t => {
-            if(!t.timestamp) return;
-            const f = t.timestamp.toDate().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit'});
-            if(t.type === 'ingreso') s += t.amount; else s -= t.amount;
-            if(labels[labels.length-1] === f) data[data.length-1] = s; else { labels.push(f); data.push(s); }
-        });
-        const ctxArea = document.getElementById('areaChart').getContext('2d');
+        movs.forEach(t => { if(!t.timestamp) return; const f = t.timestamp.toDate().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit'}); if(t.type === 'ingreso') s += t.amount; else s -= t.amount; if(labels[labels.length-1] === f) data[data.length-1] = s; else { labels.push(f); data.push(s); } });
+        const ctxA = document.getElementById('areaChart').getContext('2d');
         if(areaChart) areaChart.destroy();
-        areaChart = new Chart(ctxArea, {
-            type: 'line',
-            data: { labels: labels, datasets: [{ label: 'Saldo', data: data, fill: true, backgroundColor: 'rgba(52, 152, 219, 0.2)', borderColor: '#3498db', tension: 0.3 }] },
-            options: { scales: { y: { ticks: { color: '#aaa' } }, x: { ticks: { color: '#aaa' } } }, plugins: { legend: { display: false } } }
-        });
+        areaChart = new Chart(ctxA, { type: 'line', data: { labels: labels, datasets: [{ label: 'Saldo', data: data, fill: true, backgroundColor: 'rgba(52, 152, 219, 0.2)', borderColor: '#3498db', tension: 0.3 }] }, options: { scales: { y: { ticks: { color: '#aaa' } }, x: { ticks: { color: '#aaa' } } }, plugins: { legend: { display: false } } } });
     }
 
     function addEntry(type) {
         const amount = parseFloat(document.getElementById('amount').value);
         const desc = document.getElementById('desc').value;
         if (!amount || !desc) return;
-        db.collection("movimientos").add({
-            amount, desc, cat: document.getElementById('cat').value, type,
-            perfil: currentUser, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        db.collection("movimientos").add({ amount, desc, cat: document.getElementById('cat').value, type, perfil: currentUser, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
         document.getElementById('amount').value = ""; document.getElementById('desc').value = "";
         showTab('home');
     }
 
-    function solicitarBorrar(id) {
-        document.getElementById('confirm-modal').classList.remove('hidden');
-        document.getElementById('btn-confirmar-borrar').onclick = () => { db.collection("movimientos").doc(id).delete(); cerrarModal('confirm-modal'); };
-    }
+    function solicitarBorrar(id) { document.getElementById('confirm-modal').classList.remove('hidden'); document.getElementById('btn-confirmar-borrar').onclick = () => { db.collection("movimientos").doc(id).delete(); cerrarModal('confirm-modal'); }; }
 
     function cerrarMesAutomatico() {
         if (currentSaldoNeto <= 0 || !confirm("¿Cerrar mes y ahorrar saldo?")) return;
@@ -304,8 +258,7 @@
     function abrirCrearPerfil() { document.getElementById('nuevo-perfil-modal').classList.remove('hidden'); }
     async function guardarNuevoPerfil() {
         const n = document.getElementById('nuevo-nombre-input').value.trim();
-        const p = document.getElementById('nuevo-pin-input').value.trim();
-        if(n && p.length >= 4) { await db.collection("config_perfiles").doc(n).set({ pin: p }); cerrarModal('nuevo-perfil-modal'); }
+        if(n) { await db.collection("config_perfiles").doc(n).set({ pin: "" }); cerrarModal('nuevo-perfil-modal'); }
     }
 
     inicializarApp();
