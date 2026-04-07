@@ -21,8 +21,6 @@
             margin-bottom: 15px; border-left: 6px solid var(--purple); 
             box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: center;
         }
-        .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; }
-        .nav-menu button { background: #333; flex: 1; padding: 10px; font-size: 0.8rem; margin: 0; }
         button { 
             width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; 
             border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s;
@@ -38,29 +36,33 @@
             background: var(--card); padding: 20px; border-radius: 15px;
             border-bottom: 4px solid var(--purple); cursor: pointer; transition: 0.3s;
         }
-        .profile-card:active { transform: scale(0.95); }
-        
-        #pin-modal {
+        .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center;
             z-index: 10000; backdrop-filter: blur(8px);
         }
+        .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; }
+        .nav-menu button { background: #333; flex: 1; padding: 10px; font-size: 0.8rem; margin: 0; }
+        .item-list { background: var(--card); padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="profile-selection">
-        <h1 style="text-align:center; margin-bottom:5px">Finansas IB</h1>
+        <h1 id="main-title" onclick="activarAdmin()" style="text-align:center; margin-bottom:5px; cursor:default">Finansas IB</h1>
         <p style="text-align:center; color:var(--gray); margin-bottom:30px">¿Quién está usando la app?</p>
         <div id="profiles-grid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px"></div>
-        <button onclick="abrirCrearPerfil()" style="background:transparent; border:2px dashed var(--purple); color:var(--purple); margin-top:30px">+ AGREGAR PERFIL</button>
+        
+        <button id="btn-admin-add" onclick="abrirCrearPerfil()" class="hidden" style="background:transparent; border:2px dashed var(--purple); color:var(--purple); margin-top:30px">
+            + AGREGAR PERFIL (ADMIN)
+        </button>
     </div>
 
     <div id="main-dashboard" class="hidden">
         <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:15px">
             <h2 id="user-display" style="margin:0; font-size: 1.1rem;"></h2>
-            <button onclick="logout()" style="width:auto; background:#333; padding:5px 12px; margin:0; font-size:0.7rem">Salir</button>
+            <button onclick="location.reload()" style="width:auto; background:#333; padding:5px 12px; margin:0; font-size:0.7rem">Salir</button>
         </div>
         <div class="nav-menu">
             <button onclick="showTab('home')">HOME</button>
@@ -68,13 +70,11 @@
         </div>
         <div id="tab-home">
             <div class="card">
-                <small style="color:var(--gray)">Saldo / Gastos del Mes</small>
-                <div style="display: flex; justify-content: center; align-items: baseline; gap: 12px;">
-                    <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.3rem;">$0</h1>
-                    <h3 id="total-spent" style="color:var(--red); margin:0; font-size: 1.1rem; font-weight: normal; opacity: 0.9;">-$0</h3>
-                </div>
+                <small style="color:var(--gray)">Saldo del Mes</small>
+                <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.3rem;">$0</h1>
+                <h3 id="total-spent" style="color:var(--red); margin:0; font-size: 1.1rem; font-weight: normal; opacity: 0.9;">-$0</h3>
                 <hr style="border:0; border-top:1px solid #333; margin:15px 0">
-                <small style="color:var(--gray)">Ahorro Total Acumulado</small>
+                <small style="color:var(--gray)">Ahorro Total</small>
                 <h2 id="total-saved-big" style="color:var(--purple); margin:5px 0">$0</h2>
             </div>
             <button class="btn-add" onclick="showTab('add')">+ NUEVO MOVIMIENTO</button>
@@ -99,21 +99,33 @@
     </div>
 </div>
 
-<div id="pin-modal" class="hidden">
+<div id="pin-modal" class="modal-overlay hidden">
     <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--purple);">
-        <h3 style="margin-top:0">Seguridad</h3>
-        <p id="pin-msg" style="color:var(--gray); font-size:0.9rem"></p>
-        <input type="password" id="pin-input" placeholder="****" inputmode="numeric" style="text-align:center; font-size:2rem; letter-spacing:15px;">
-        <div style="display:flex; gap:10px; margin-top:15px">
+        <h3 style="margin:0">Seguridad</h3>
+        <p id="pin-msg" style="color:var(--gray); font-size:0.8rem; margin-bottom:15px"></p>
+        <input type="password" id="pin-input" placeholder="****" inputmode="numeric" maxlength="4" style="text-align:center; font-size:2rem; letter-spacing:15px;">
+        <div style="display:flex; gap:10px; margin-top:10px">
             <button id="btn-confirmar-pin" class="btn-add">ENTRAR</button>
-            <button onclick="cerrarPin()" style="background:#444">VOLVER</button>
+            <button onclick="cerrarModal('pin-modal')" style="background:#444">VOLVER</button>
+        </div>
+    </div>
+</div>
+
+<div id="nuevo-perfil-modal" class="modal-overlay hidden">
+    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--green);">
+        <h3 style="margin:0">Nuevo Perfil</h3>
+        <p style="color:var(--gray); font-size:0.8rem; margin-bottom:15px">Configurá el acceso</p>
+        <input type="text" id="nuevo-nombre-input" placeholder="Nombre">
+        <input type="password" id="nuevo-pin-input" placeholder="PIN (4 números)" inputmode="numeric" maxlength="4" style="text-align:center; letter-spacing:5px;">
+        <div style="display:flex; gap:10px; margin-top:10px">
+            <button onclick="guardarNuevoPerfil()" class="btn-add">CREAR</button>
+            <button onclick="cerrarModal('nuevo-perfil-modal')" style="background:#444">CANCELAR</button>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // CONFIGURACIÓN FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBCtAu5W-S48pICmS9H0k7mKLiJpNKHSoQ",
         authDomain: "finansas-ib.firebaseapp.com",
@@ -126,12 +138,26 @@
     const db = firebase.firestore();
 
     let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0;
+    let clicsAdmin = 0;
 
-    // --- FUNCIÓN DE ARRANQUE LIMPIO ---
+    // --- TRUCO DE ADMINISTRADOR ---
+    function activarAdmin() {
+        clicsAdmin++;
+        if (clicsAdmin === 7) { // Tocá 7 veces el título "Finansas IB"
+            const pass = prompt("Clave Maestra:");
+            if (pass === "2026") { // CAMBIÁ ESTA CLAVE SI QUERÉS
+                document.getElementById('btn-admin-add').classList.remove('hidden');
+                alert("🔓 Modo Administrador: Botón activado.");
+            }
+            clicsAdmin = 0;
+        }
+    }
+
     function inicializarApp() {
         document.getElementById('pin-modal').classList.add('hidden');
+        document.getElementById('nuevo-perfil-modal').classList.add('hidden');
         document.getElementById('main-dashboard').classList.add('hidden');
-        document.getElementById('profile-selection').classList.remove('hidden');
+        document.getElementById('btn-admin-add').classList.add('hidden'); // Siempre empieza oculto
         cargarPerfiles();
     }
 
@@ -149,24 +175,35 @@
         });
     }
 
-    // --- ACTIVAR PIN SOLO AL HACER CLIC ---
     async function intentarAcceso(nombre) {
         const doc = await db.collection("config_perfiles").doc(nombre).get();
         const pinCorrecto = doc.data().pin;
-        
-        // RECIÉN ACÁ quitamos el "hidden"
         document.getElementById('pin-modal').classList.remove('hidden');
-        document.getElementById('pin-msg').innerText = "Clave para " + nombre;
+        document.getElementById('pin-msg').innerText = "Ingresá la clave de " + nombre;
         document.getElementById('pin-input').value = "";
         document.getElementById('pin-input').focus();
-
         document.getElementById('btn-confirmar-pin').onclick = () => {
             if(document.getElementById('pin-input').value === pinCorrecto) {
-                cerrarPin(); 
-                selectProfile(nombre);
+                cerrarModal('pin-modal'); selectProfile(nombre);
             } else { alert("❌ PIN Incorrecto"); }
         };
     }
+
+    function abrirCrearPerfil() {
+        document.getElementById('nuevo-perfil-modal').classList.remove('hidden');
+    }
+
+    async function guardarNuevoPerfil() {
+        const n = document.getElementById('nuevo-nombre-input').value.trim();
+        const p = document.getElementById('nuevo-pin-input').value.trim();
+        if(n && p.length >= 4) {
+            await db.collection("config_perfiles").doc(n).set({ pin: p });
+            cerrarModal('nuevo-perfil-modal');
+            document.getElementById('btn-admin-add').classList.add('hidden'); // Se oculta tras usarlo
+        }
+    }
+
+    function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
 
     function selectProfile(name) {
         currentUser = name;
@@ -174,16 +211,6 @@
         document.getElementById('profile-selection').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         iniciarEscuchas();
-    }
-
-    function cerrarPin() { document.getElementById('pin-modal').classList.add('hidden'); }
-    function logout() { location.reload(); }
-
-    async function abrirCrearPerfil() {
-        const n = prompt("Nombre del nuevo perfil:");
-        if(!n) return;
-        const p = prompt("Creá un PIN de 4 números:");
-        if(p && p.length >= 4) await db.collection("config_perfiles").doc(n).set({ pin: p });
     }
 
     function iniciarEscuchas() {
@@ -207,7 +234,7 @@
                     <div><strong>${t.desc}</strong><br><small>${t.cat}</small></div>
                     <div style="text-align:right">
                         <div style="font-weight:bold; color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div>
-                        <button onclick="borrarDato('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; border:none;">Borrar</button>
+                        <button onclick="borrarDato('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; border:none; padding:0">Borrar</button>
                     </div>
                 </div>`;
         });
@@ -243,7 +270,6 @@
         }
     }
 
-    // ARRANCAR LA APP
     inicializarApp();
 </script>
 </body>
