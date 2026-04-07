@@ -6,10 +6,13 @@
     <title>Finansas IB Pro</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg: #121212; --card: #1e1e1e; --purple: #6c5ce7; 
-            --green: #00b894; --red: #d63031; --text: #ffffff; --gray: #aaa;
+            --bg: #121212; --card: #1e1e1e; --purple: #8e44ad; 
+            --green: #2ecc71; --red: #e74c3c; --yellow: #f1c40f; --blue: #3498db; --text: #ffffff; --gray: #aaa;
+            --purple-shadow: rgba(142, 68, 173, 0.4);
+            --green-shadow: rgba(46, 204, 113, 0.3);
         }
         body { 
             font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); 
@@ -17,116 +20,144 @@
         }
         .container { width: 100%; max-width: 450px; }
         .card { 
-            background: var(--card); padding: 20px; border-radius: 15px; 
-            margin-bottom: 15px; border-left: 6px solid var(--purple); 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: center;
+            background: var(--card); padding: 20px; border-radius: 20px; 
+            margin-bottom: 20px; border-left: 6px solid var(--purple); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.6); text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px var(--purple-shadow); }
         button { 
-            width: 100%; padding: 15px; margin: 8px 0; border-radius: 10px; 
-            border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s;
+            width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; 
+            border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.3s;
+            font-size: 1rem; text-transform: uppercase; letter-spacing: 1px;
         }
-        .btn-add { background: var(--green); }
+        .btn-add { background: var(--green); box-shadow: 0 5px 15px var(--green-shadow); }
+        .btn-add:hover { transform: scale(1.03); box-shadow: 0 8px 20px var(--green-shadow); }
         .btn-save { background: var(--purple); }
+        .btn-save:hover { background: #9b59b6; }
         input, select { 
-            width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; 
-            background: #252525; color: white; border: 1px solid #333; box-sizing: border-box;
+            width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; 
+            background: #2a2a2a; color: white; border: 1px solid #333; box-sizing: border-box;
+            font-size: 1rem;
         }
+        input:focus, select:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 10px var(--purple-shadow); }
         .hidden { display: none !important; }
-        .profile-card { background: var(--card); padding: 20px; border-radius: 15px; border-bottom: 4px solid var(--purple); cursor: pointer; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(8px); }
-        .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; }
-        .nav-menu button { background: #333; flex: 1; padding: 10px; font-size: 0.8rem; margin: 0; }
-        .item-list { background: var(--card); padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .profile-card { background: var(--card); padding: 25px; border-radius: 25px; border-bottom: 5px solid var(--purple); cursor: pointer; transition: 0.3s ease; }
+        .profile-card:hover { transform: scale(1.05); border-bottom-width: 8px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.97); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(10px); }
+        .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; width: 100%; justify-content: space-between; }
+        .nav-menu button { background: #252525; flex: 1; padding: 12px; font-size: 0.8rem; margin: 0; border-radius: 8px; border: 1px solid #333; color: var(--gray); }
+        .nav-menu button.active { background: var(--purple); color: white; border-color: var(--purple); box-shadow: 0 5px 15px var(--purple-shadow); }
+        .item-list { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; text-align: left; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="profile-selection">
-        <h1 id="main-title" onclick="activarAdmin()" style="text-align:center; margin-bottom:5px;">Finansas IB</h1>
-        <p style="text-align:center; color:var(--gray); margin-bottom:30px">¿Quién está usando la app?</p>
-        <div id="profiles-grid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px"></div>
-        <button id="btn-admin-add" onclick="abrirCrearPerfil()" class="hidden" style="background:transparent; border:2px dashed var(--purple); color:var(--purple); margin-top:30px">+ AGREGAR PERFIL</button>
+        <h1 onclick="activarAdmin()" style="text-align:center; margin-bottom:10px; font-size: 2.5rem; letter-spacing: -1px;">Finansas IB</h1>
+        <p style="text-align:center; color:var(--gray); margin-bottom:40px; font-size: 1.1rem;">Bienvenido. ¿Quién eres?</p>
+        <div id="profiles-grid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:20px"></div>
+        <button id="btn-admin-add" onclick="abrirCrearPerfil()" class="hidden" style="background:transparent; border:2px dashed var(--purple); color:var(--purple); margin-top:40px">+ AGREGAR PERFIL (ADMIN)</button>
     </div>
 
     <div id="main-dashboard" class="hidden">
-        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:15px">
-            <h2 id="user-display" style="margin:0; font-size: 1.1rem;"></h2>
-            <button onclick="location.reload()" style="width:auto; background:#333; padding:5px 12px; margin:0; font-size:0.7rem">Salir</button>
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:20px">
+            <h2 id="user-display" style="margin:0; font-size: 1.2rem; font-weight: 600;"></h2>
+            <button onclick="location.reload()" style="width:auto; background:#252525; padding:8px 15px; margin:0; font-size:0.8rem; border-radius: 8px; border: 1px solid #333;">Salir</button>
         </div>
+        
         <div class="nav-menu">
-            <button onclick="showTab('home')">INICIO</button>
-            <button onclick="showTab('ahorros')">AHORROS</button>
+            <button id="nav-home" onclick="showTab('home')" class="active">INICIO</button>
+            <button id="nav-stats" onclick="showTab('stats')">ESTADÍSTICAS</button>
+            <button id="nav-ahorros" onclick="showTab('ahorros')">AHORROS</button>
         </div>
 
         <div id="tab-home">
             <div class="card">
-                <small style="color:var(--gray)">Saldo del Mes</small>
-                <h1 id="net-balance" style="color:var(--green); margin:5px 0; font-size: 2.3rem;">$0</h1>
-                <h3 id="total-spent" style="color:var(--red); margin:0; font-size: 1.1rem; font-weight: normal; opacity: 0.9;">-$0</h3>
+                <small style="color:var(--gray); text-transform: uppercase; letter-spacing: 1px;">Saldo Disponible</small>
+                <h1 id="net-balance" style="color:var(--green); margin:10px 0; font-size: 3rem; font-weight: 800;">$0</h1>
+                <h3 id="total-spent" style="color:var(--red); margin:0; font-size: 1.2rem; font-weight: normal; opacity: 0.8;">-$0 gastados</h3>
             </div>
             <button class="btn-add" onclick="showTab('add')">+ NUEVO MOVIMIENTO</button>
-            <button class="btn-save" onclick="prepararCierreMes()">🔒 CERRAR MES</button>
-            <div id="history-list" style="margin-top:20px"></div>
+            <button class="btn-save" onclick="cerrarMesAutomatico()">🔒 CERRAR MES & AHORRAR</button>
+            <div id="history-list" style="margin-top:25px"></div>
+        </div>
+
+        <div id="tab-stats" class="hidden">
+            <div class="card" style="padding: 15px;">
+                <h3 style="margin-top: 5px; color: var(--gray);">Gastos por Categoría</h3>
+                <div style="position: relative; height:250px; width:100%">
+                    <canvas id="donutChart"></canvas>
+                </div>
+            </div>
+            <div class="card" style="padding: 15px; border-left-color: var(--blue);">
+                <h3 style="margin-top: 5px; color: var(--gray);">Evolución del Saldo</h3>
+                <div style="position: relative; height:200px; width:100%">
+                    <canvas id="areaChart"></canvas>
+                </div>
+            </div>
+            <button onclick="showTab('home')" style="background:#252525; border: 1px solid #333; color: var(--gray);">VOLVER AL INICIO</button>
         </div>
 
         <div id="tab-ahorros" class="hidden">
             <div class="card" style="border-left: 6px solid var(--green);">
-                <small style="color:var(--gray)">Ahorro Total Acumulado</small>
-                <h1 id="total-saved-big" style="color:var(--green); margin:10px 0">$0</h1>
+                <small style="color:var(--gray); text-transform: uppercase; letter-spacing: 1px;">Ahorro Total Acumulado</small>
+                <h1 id="total-saved-big" style="color:var(--green); margin:15px 0; font-size: 2.8rem;">$0</h1>
             </div>
-            <h3 style="margin-top:20px">Historial de Cierres</h3>
+            <h3 style="margin-top:25px; text-align: left; color: var(--gray);">Historial de Cierres de Mes</h3>
             <div id="meses-list"></div>
-            <button onclick="showTab('home')" style="background:#333">VOLVER</button>
+            <button onclick="showTab('home')" style="background:#252525; border: 1px solid #333; color: var(--gray);">VOLVER</button>
         </div>
 
         <div id="tab-add" class="hidden">
-            <h2>Nuevo Registro</h2>
+            <h2 style="text-align:center; margin-bottom: 20px;">Nuevo Registro</h2>
             <input type="number" id="amount" placeholder="Monto $" inputmode="decimal">
             <input type="text" id="desc" placeholder="Descripción (ej: Pago de cliente)">
             <select id="cat">
-                <option value="Sueldo">Sueldo / Pago</option>
-                <option value="Comida">Comida</option>
-                <option value="Servicios">Servicios</option>
-                <option value="Nafta">Nafta</option>
-                <option value="Varios">Varios</option>
+                <option value="Sueldo">Sueldo / Pago recibido</option>
+                <option value="Comida">Comida / Supermercado</option>
+                <option value="Servicios">Servicios (Luz, Agua, Gas, Internet)</option>
+                <option value="Nafta">Nafta / Transporte</option>
+                <option value="Varios">Varios / Ocio</option>
             </select>
-            <div style="display:flex; gap:10px">
-                <button onclick="addEntry('gasto')" style="background:var(--red)">GASTO</button>
-                <button onclick="addEntry('ingreso')" style="background:var(--green)">INGRESO</button>
+            <div style="display:flex; gap:12px; margin-top: 15px;">
+                <button onclick="addEntry('gasto')" style="background:var(--red); flex: 1;">Registrar Gasto</button>
+                <button onclick="addEntry('ingreso')" style="background:var(--green); flex: 1;">Registrar Ingreso</button>
             </div>
-            <button onclick="showTab('home')" style="background:#444">CANCELAR</button>
+            <button onclick="showTab('home')" style="background:#252525; color: var(--gray); margin-top: 20px;">CANCELAR</button>
         </div>
     </div>
 </div>
 
 <div id="pin-modal" class="modal-overlay hidden">
-    <div class="card" style="width:85%; max-width:320px;">
-        <h3>Seguridad</h3>
-        <p id="pin-msg" style="color:var(--gray); font-size:0.8rem;"></p>
-        <input type="password" id="pin-input" placeholder="****" inputmode="numeric" maxlength="4" style="text-align:center; font-size:2rem; letter-spacing:15px;">
+    <div class="card" style="width:85%; max-width:350px;">
+        <h3 style="margin-top:0">Acceso Seguro</h3>
+        <p id="pin-msg" style="color:var(--gray); font-size:0.9rem; margin-bottom: 20px;"></p>
+        <input type="password" id="pin-input" placeholder="****" inputmode="numeric" maxlength="4" style="text-align:center; font-size:2.5rem; letter-spacing:15px; padding: 10px;">
         <button id="btn-confirmar-pin" class="btn-add">ENTRAR</button>
-        <button onclick="cerrarModal('pin-modal')" style="background:#444">VOLVER</button>
+        <button onclick="cerrarModal('pin-modal')" style="background:#252525; color: var(--gray); margin-top: 10px;">VOLVER</button>
     </div>
 </div>
 
 <div id="nuevo-perfil-modal" class="modal-overlay hidden">
-    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--green);">
-        <h3>Nuevo Perfil</h3>
-        <input type="text" id="nuevo-nombre-input" placeholder="Nombre">
-        <input type="password" id="nuevo-pin-input" placeholder="PIN (4 números)" inputmode="numeric" maxlength="4" style="text-align:center; letter-spacing:5px;">
-        <button onclick="guardarNuevoPerfil()" class="btn-add">CREAR</button>
-        <button onclick="cerrarModal('nuevo-perfil-modal')" style="background:#444">CANCELAR</button>
+    <div class="card" style="width:85%; max-width:350px; border-left: 6px solid var(--green);">
+        <h3 style="margin-top:0">Nuevo Perfil</h3>
+        <p style="color:var(--gray); font-size:0.9rem; margin-bottom: 20px;">Configurá un acceso privado.</p>
+        <input type="text" id="nuevo-nombre-input" placeholder="Nombre (ej: Johan Medina)">
+        <input type="password" id="nuevo-pin-input" placeholder="PIN (4 números)" inputmode="numeric" maxlength="4" style="text-align:center; letter-spacing:8px;">
+        <button onclick="guardarNuevoPerfil()" class="btn-add">CREAR PERFIL</button>
+        <button onclick="cerrarModal('nuevo-perfil-modal')" style="background:#252525; color: var(--gray); margin-top: 10px;">CANCELAR</button>
     </div>
 </div>
 
 <div id="confirm-modal" class="modal-overlay hidden">
-    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--red);">
-        <h3>¿Borrar registro?</h3>
-        <p style="color:var(--gray)">Esta acción no se puede deshacer.</p>
-        <div style="display:flex; gap:10px; margin-top:15px">
-            <button id="btn-confirmar-borrar" style="background:var(--red)">BORRAR</button>
-            <button onclick="cerrarModal('confirm-modal')" style="background:#444">CANCELAR</button>
+    <div class="card" style="width:85%; max-width:320px; border-left: 6px solid var(--red); padding: 25px;">
+        <h3 style="margin:0; color: var(--red);">¿Borrar registro?</h3>
+        <p style="color:var(--gray); margin: 15px 0;">Esta acción es permanente.</p>
+        <div style="display:flex; gap:12px; margin-top:20px">
+            <button id="btn-confirmar-borrar" style="background:var(--red); flex: 1;">BORRAR</button>
+            <button onclick="cerrarModal('confirm-modal')" style="background:#252525; flex: 1; color: var(--gray);">CANCELAR</button>
         </div>
     </div>
 </div>
@@ -143,13 +174,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, clicsAdmin = 0;
+    let currentUser = "", transactions = [], totalAhorrado = 0, currentSaldoNeto = 0, clicsAdmin = 0, donutChart = null, areaChart = null;
 
     function activarAdmin() {
         clicsAdmin++;
         if (clicsAdmin === 7) {
-            const pass = prompt("Clave Maestra:");
-            if (pass === "2026") { document.getElementById('btn-admin-add').classList.remove('hidden'); }
+            const pass = prompt("Clave:");
+            if (pass === "2026") { document.getElementById('btn-admin-add').classList.remove('hidden'); alert("🔓 Modo Admin activado."); }
             clicsAdmin = 0;
         }
     }
@@ -163,10 +194,9 @@
 
     function cargarPerfiles() {
         db.collection("config_perfiles").onSnapshot(snap => {
-            const grid = document.getElementById('profiles-grid');
-            grid.innerHTML = "";
+            const grid = document.getElementById('profiles-grid'); grid.innerHTML = "";
             snap.forEach(doc => {
-                grid.innerHTML += `<div onclick="intentarAcceso('${doc.id}')" class="profile-card"><div style="font-size:2.5rem; margin-bottom:10px">👤</div><strong>${doc.id}</strong></div>`;
+                grid.innerHTML += `<div onclick="intentarAcceso('${doc.id}')" class="profile-card"><div style="font-size:3rem; margin-bottom:15px">👤</div><strong style="font-size: 1.1rem;">${doc.id}</strong></div>`;
             });
         });
     }
@@ -175,18 +205,17 @@
         const doc = await db.collection("config_perfiles").doc(nombre).get();
         const pinCorrecto = doc.data().pin;
         document.getElementById('pin-modal').classList.remove('hidden');
-        document.getElementById('pin-msg').innerText = "Clave para " + nombre;
-        document.getElementById('pin-input').value = "";
-        document.getElementById('pin-input').focus();
+        document.getElementById('pin-msg').innerText = "Ingresá la clave de acceso para " + nombre;
+        document.getElementById('pin-input').value = ""; document.getElementById('pin-input').focus();
         document.getElementById('btn-confirmar-pin').onclick = () => {
             if(document.getElementById('pin-input').value === pinCorrecto) { cerrarModal('pin-modal'); selectProfile(nombre); }
-            else { alert("❌ PIN Incorrecto"); }
+            else { alert("❌ PIN Incorrecto"); document.getElementById('pin-input').value = ""; }
         };
     }
 
     function selectProfile(name) {
         currentUser = name;
-        document.getElementById('user-display').innerText = "Perfil: " + name;
+        document.getElementById('user-display').innerText = name;
         document.getElementById('profile-selection').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         iniciarEscuchas();
@@ -196,14 +225,14 @@
         db.collection("movimientos").where("perfil", "==", currentUser).orderBy("timestamp", "desc").onSnapshot(snap => {
             transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderUI();
+            if(!document.getElementById('tab-stats').classList.contains('hidden')) { updateCharts(); }
         });
         db.collection("ahorros").doc(currentUser).onSnapshot(doc => {
             totalAhorrado = doc.exists ? doc.data().total : 0;
             document.getElementById('total-saved-big').innerText = "$" + totalAhorrado.toLocaleString();
         });
         db.collection("historial_cierres").where("perfil", "==", currentUser).orderBy("fecha", "desc").onSnapshot(snap => {
-            const list = document.getElementById('meses-list');
-            list.innerHTML = "";
+            const list = document.getElementById('meses-list'); list.innerHTML = "";
             snap.forEach(doc => {
                 const d = doc.data();
                 list.innerHTML += `<div class="item-list"><span>${d.mes}</span><strong>$${d.monto.toLocaleString()}</strong></div>`;
@@ -218,16 +247,65 @@
             if(t.type === 'ingreso') net += t.amount; else { net -= t.amount; spent += t.amount; }
             list.innerHTML += `
                 <div class="item-list" style="border-left: 5px solid ${t.type==='ingreso'?'var(--green)':'var(--red)'}">
-                    <div><strong>${t.desc}</strong><br><small>${t.cat}</small></div>
+                    <div><strong>${t.desc}</strong><br><small style="color:var(--gray)">${t.cat}</small></div>
                     <div style="text-align:right">
-                        <div style="font-weight:bold; color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div>
-                        <button onclick="solicitarBorrar('${t.id}')" style="background:none; color:var(--red); font-size:0.7rem; padding:0">Borrar</button>
+                        <div style="font-weight:bold; font-size: 1.1rem; color:${t.type==='ingreso'?'var(--green)':'var(--red)'}">$${t.amount.toLocaleString()}</div>
+                        <button onclick="solicitarBorrar('${t.id}')" style="background:none; color:var(--red); font-size:0.75rem; padding:0; margin-top: 5px;">Borrar</button>
                     </div>
                 </div>`;
         });
         document.getElementById('net-balance').innerText = "$" + net.toLocaleString();
-        document.getElementById('total-spent').innerText = "-$" + spent.toLocaleString();
+        document.getElementById('total-spent').innerText = "-$" + spent.toLocaleString() + " gastados este mes";
         currentSaldoNeto = net;
+    }
+
+    // --- GRÁFICOS MODERNOS ---
+    function updateCharts() {
+        Chart.defaults.color = '#aaaaaa';
+        Chart.defaults.font.family = "'Segoe UI', sans-serif";
+
+        const gastos = transactions.filter(t => t.type === 'gasto');
+        const cats = [...new Set(gastos.map(g => g.cat))];
+        const donutData = cats.map(c => gastos.filter(g => g.cat === c).reduce((sum, current) => sum + current.amount, 0));
+        
+        // 1. Gráfico de Anillo (Donut) Neon
+        const ctxDonut = document.getElementById('donutChart').getContext('2d');
+        if(donutChart) donutChart.destroy();
+        donutChart = new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: { labels: cats, datasets: [{ data: donutData, backgroundColor: ['#8e44ad', '#2ecc71', '#e74c3c', '#f1c40f', '#3498db'], borderWidth: 3, borderColor: '#1e1e1e', hoverBorderColor: 'white' }] },
+            options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } }, tooltip: { callbacks: { label: (context) => ` $${context.parsed.toLocaleString()}` } } }, animation: { animateScale: true, animateRotate: true } }
+        });
+
+        // 2. Gráfico de Montañas (Área Sombrada)
+        if(transactions.length === 0) return;
+        const movimientosOrdenados = [...transactions].sort((a, b) => (a.timestamp ? a.timestamp.toDate() : 0) - (b.timestamp ? b.timestamp.toDate() : 0));
+        
+        let saldoAcumulado = 0;
+        const areaLabels = [];
+        const areaData = [];
+        
+        movimientosOrdenados.forEach(t => {
+            if(!t.timestamp) return;
+            const fecha = t.timestamp.toDate().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            if(t.type === 'ingreso') saldoAcumulado += t.amount; else saldoAcumulado -= t.amount;
+            
+            // Si la fecha ya existe, actualizamos el saldo final de ese día
+            if(areaLabels[areaLabels.length - 1] === fecha) { areaData[areaData.length - 1] = saldoAcumulado; } 
+            else { areaLabels.push(fecha); areaData.push(saldoAcumulado); }
+        });
+
+        const ctxArea = document.getElementById('areaChart').getContext('2d');
+        const gradient = ctxArea.createLinearGradient(0, 0, 0, 200);
+        gradient.addColorStop(0, 'rgba(52, 152, 219, 0.5)'); // Azul traslúcido arriba
+        gradient.addColorStop(1, 'rgba(52, 152, 219, 0.0)'); // Transparente abajo
+
+        if(areaChart) areaChart.destroy();
+        areaChart = new Chart(ctxArea, {
+            type: 'line',
+            data: { labels: areaLabels, datasets: [{ label: 'Saldo', data: areaData, fill: true, backgroundColor: gradient, borderColor: '#3498db', borderWidth: 2, pointBackgroundColor: 'white', pointBorderColor: '#3498db', pointRadius: 3, pointHoverRadius: 6, tension: 0.3 }] },
+            options: { scales: { y: { beginAtZero: false, ticks: { callback: (value) => '$' + value.toLocaleString() } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => ` $${context.parsed.toLocaleString()}` } } } }
+        });
     }
 
     function addEntry(type) {
@@ -242,7 +320,6 @@
         showTab('home');
     }
 
-    // BORRAR SIN CARTEL DE URL
     function solicitarBorrar(id) {
         document.getElementById('confirm-modal').classList.remove('hidden');
         document.getElementById('btn-confirmar-borrar').onclick = () => {
@@ -252,18 +329,24 @@
     }
 
     function cerrarMesAutomatico() {
-        if (currentSaldoNeto <= 0) return alert("Nada que ahorrar.");
+        if (currentSaldoNeto <= 0 || !confirm("¿Confirmás el cierre de mes? El saldo actual ($" + currentSaldoNeto.toLocaleString() + ") se sumará a tus ahorros acumulados.")) return;
         const mesAnio = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
-        db.collection("historial_cierres").add({
-            perfil: currentUser, mes: mesAnio, monto: currentSaldoNeto, fecha: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        db.collection("historial_cierres").add({ perfil: currentUser, mes: mesAnio, monto: currentSaldoNeto, fecha: firebase.firestore.FieldValue.serverTimestamp() });
         db.collection("ahorros").doc(currentUser).set({ total: totalAhorrado + currentSaldoNeto })
-        .then(() => transactions.forEach(t => db.collection("movimientos").doc(t.id).delete()));
+        .then(() => { transactions.forEach(t => db.collection("movimientos").doc(t.id).delete()); alert("✅ Mes cerrado con éxito."); });
     }
 
     function showTab(t) {
-        ['home', 'ahorros', 'add'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
+        ['home', 'stats', 'ahorros', 'add'].forEach(id => document.getElementById('tab-'+id).classList.add('hidden'));
         document.getElementById('tab-'+t).classList.remove('hidden');
+        
+        // Actualizar menú activo
+        document.querySelectorAll('.nav-menu button').forEach(b => b.classList.remove('active'));
+        const navBtn = document.getElementById('nav-' + (t === 'add' ? 'home' : t));
+        if(navBtn) navBtn.classList.add('active');
+
+        // Renderizar gráficos si estamos en Stats
+        if(t === 'stats' && transactions.length > 0) { setTimeout(updateCharts, 50); }
     }
 
     function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -271,7 +354,7 @@
     async function guardarNuevoPerfil() {
         const n = document.getElementById('nuevo-nombre-input').value.trim();
         const p = document.getElementById('nuevo-pin-input').value.trim();
-        if(n && p.length >= 4) { await db.collection("config_perfiles").doc(n).set({ pin: p }); cerrarModal('nuevo-perfil-modal'); }
+        if(n && p.length >= 4) { await db.collection("config_perfiles").doc(n).set({ pin: p }); alert("✅ Perfil creado."); cerrarModal('nuevo-perfil-modal'); }
     }
 
     inicializarApp();
